@@ -1,0 +1,47 @@
+#!/bin/bash
+cd /tmp
+# Packages to install
+# p = package, u = tar.gz url, d = directory contained in the package (containing setup.py)
+p[1]=swift
+u[1]=http://pypi.python.org/packages/source/s/swift/swift-1.0.2.tar.gz#md5=3e5bcda0280360833981387796cfecdb
+d[1]=swift-1.0.2
+p[2]=argparse
+u[2]=http://argparse.googlecode.com/files/argparse-1.2.1.tar.gz
+d[2]=argparse-1.2.1
+p[3]=setproctitle
+u[3]=http://pypi.python.org/packages/source/s/setproctitle/setproctitle-1.1.6.tar.gz#md5=1e42e43b440214b971f4b33c21eac369
+d[3]=setproctitle-1.1.6
+p[4]=suds
+u[4]=http://pypi.python.org/packages/source/s/suds/suds-0.4.tar.gz#md5=b7502de662341ed7275b673e6bd73191
+d[4]=suds-0.4
+p[5]=prettytable
+u[5]=http://pypi.python.org/packages/source/P/PrettyTable/prettytable-0.6.1.tar.gz#md5=8f97da999f52e47e28ec4ffe7f25c4d8
+d[5]=prettytable-0.6.1
+N=5
+i=0
+while [ "$i" -lt "$N" ]
+do
+	let "i++"
+	pp=${p[$i]}
+	uu=${u[$i]}
+	dd=${d[$i]}
+	python -c "import $pp"
+	if [ $?	-eq 0 ]
+	then
+		echo "python-$pp already installed."
+	else
+		echo "python-$pp not found, going to download."
+		echo "Downloading python-$pp"
+		wget -O /tmp/$pp.tar.gz $uu
+		echo "Extracting python-$pp"
+		tar xvf $pp.tar.gz
+		echo "Installing python-$pp"
+		cd $dd
+		python setup.py build
+		python setup.py install
+		echo "python-$pp installed."
+		cd ..
+		rm -rf $dd
+		rm $pp.tar.gz
+	fi
+done

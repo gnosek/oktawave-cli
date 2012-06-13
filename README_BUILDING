@@ -1,0 +1,1 @@
+To build the distribution-specific packages you can use the build.pl Perl script. You will need python2.6, python 2.7, alien and dpkg to run it. It also needs to be executed with root privileges. It should generate the packages in the build/ directory.
