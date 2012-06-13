@@ -84,7 +84,7 @@ sub add_control {
 my $c = load_control('deb/DEBIAN/control');
 $c = add_control($c, 'Depends', 'python-suds (>= 0.3.9), python-argparse (>= 1.1), python-prettytable (>= 0.5), python-setproctitle (>= 1.0.1), python-setuptools (>= 0.6.14)', 4);
 $c = mod_control($c, {
-	'Maintainer' => 'Marek Siemdaj (marek.siemdaj@monit24.pl)',
+	'Maintainer' => 'Oktawave Development Team (by Marek Siemdaj) <support@oktawave.com, marek.siemdaj@gmail.com>',
 	'Description' => q|Command line interface to Oktawave
  Oktawave CLI
  .
