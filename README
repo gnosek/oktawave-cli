@@ -1,0 +1,76 @@
+Oktawave-CLI version 0.7 Readme
+
+
+1. Installation
+
+If you are installing oktawave-cli from source, install the following dependencies first:
+- suds
+- swift
+- argparse
+- setproctitle
+- prettytable
+
+To install oktawave-api use:
+python setup.py build
+python setup.py install
+(you need to have python distutils installed to do this)
+
+Note: if you are installing from a package (deb or rpm), the post-install script
+will try to download and install the missing packages.
+
+
+2. Authentication
+
+To login to Oktawave, you need to specify username and password. You can do this
+either by passing command-line arguments (e.g. oktawave-cli -u USERNAME -p PASSWORD)
+or by writing the credentials to the config file. This file should have the
+following format:
+
+[Auth]
+username=USERNAME
+password=PASSWORD
+
+and be put in ~/.oktawave-cli/config. You can specify a different path to the
+configuration file with the -c command line option.
+
+
+3. Basic usage
+
+You can use oktawave-cli in 2 ways: as a script, by executing a command or as an
+interactive console. The default is script mode: in the simplest case you can
+execute a command using the syntax:
+
+oktawave-cli NAMESPACE COMMAND [arguments]
+
+where NAMESPACE is a fancy name for a group of commands (at the moment there are
+5 namespaces: Account, OCI, OCS, OVS and ORDB) that operate on related objects.
+This assumes that you have written your login credentials to
+~/.oktawave-cli/config, if not you will have to specify -u and -p before
+NAMESPACE.
+
+Required arguments depend on the command; you can see what arguments are needed
+by using oktawave-cli NAMESPACE COMMAND --help.
+
+
+4. Interactive mode
+
+To enter the interactive mode, use oktawave-cli -i (again we assume that your
+login credentials are in config file; you can also use -u and -p). In
+interactive mode you can use the available commands like this:
+
+NAMESPACE COMMAND [arguments]
+
+To exit the interactive mode, type "exit".
+
+
+5. Help
+
+You can get a list of available namespaces by issuing
+oktawave-cli --help
+To display a list of commands available in a namespace use
+oktawave-cli NAMESPACE --help
+To display information about a command use
+oktawave-cli NAMESPACE COMMAND --help
+
+You can also use this in interactive mode.
+
