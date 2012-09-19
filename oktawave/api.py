@@ -6,6 +6,7 @@ import suds
 from suds import null
 from swift.common.client import Connection
 import itertools
+import socket
 
 # Patching some stuff in suds to get it working with SOAP 1.2
 suds.bindings.binding.envns = ('SOAP-ENV', 'http://www.w3.org/2003/05/soap-envelope')
@@ -46,7 +47,10 @@ def hc_clients(method):
 		header('To', 'https://adamm.cloud.local:450/ClientsService.svc')
 	]
 
-docs_common = ['http://schemas.datacontract.org/2004/07/K2.CloudsFactory.Common']
+docs_common = [
+	'http://schemas.datacontract.org/2004/07/K2.CloudsFactory.Common',
+	'http://schemas.microsoft.com/2003/10/Serialization/'
+]
 docs_clients = [
 	'http://schemas.microsoft.com/2003/10/Serialization/',
 	'http://schemas.microsoft.com/2003/10/Serialization/Arrays',
@@ -114,7 +118,7 @@ class OktawaveApi:
 			self._init_clients(args)
 		if hasattr(self, 'client_object'):
 			return self.client_object
-		res = self.common.call('LogonUser', args.username, args.password)
+		res = self.common.call('LogonUser', args.username, args.password, self._get_machine_ip(), "Oktawave CLI");
 		self.client_id = res._x003C_Client_x003E_k__BackingField.ClientId
 		self.client_object = res
 		return res
@@ -154,6 +158,12 @@ class OktawaveApi:
 		res = disks[0]
 		if res.VirtualMachineHdds == None:
 			res.VirtualMachineHdds = [[]]
+		return res
+	def _get_machine_ip(self):
+		s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+		s.connect(("8.8.8.8", 53))
+		res = s.getsockname()[0]
+		s.close()
 		return res
 
 	### API methods below ###
