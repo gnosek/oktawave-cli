@@ -18,7 +18,7 @@ import ConfigParser
 import os
 import readline
 
-VERSION = "0.7.1"
+VERSION = "0.7.1+svn"
 
 # Helpers to add subparsers based on simple descriptions
 # Use subparser.add_argument() if you need to make use of all argparse options

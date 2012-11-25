@@ -4,7 +4,10 @@ from suds.sax.element import Element
 import sys
 import suds
 from suds import null
-from swift.common.client import Connection
+try:
+	from swiftclient import Connection
+except ImportError:
+	from swift.common.client import Connection
 import itertools
 import socket
 
@@ -118,7 +121,11 @@ class OktawaveApi:
 			self._init_clients(args)
 		if hasattr(self, 'client_object'):
 			return self.client_object
-		res = self.common.call('LogonUser', args.username, args.password, self._get_machine_ip(), "Oktawave CLI");
+		try:
+			res = self.common.call('LogonUser', args.username, args.password, self._get_machine_ip(), "Oktawave CLI");
+		except AttributeError:
+			print "ERROR: Couldn't login to Oktawave."
+			sys.exit(1)
 		self.client_id = res._x003C_Client_x003E_k__BackingField.ClientId
 		self.client_object = res
 		return res

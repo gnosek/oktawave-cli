@@ -3,9 +3,10 @@ Oktawave-CLI version 0.7 Readme
 
 1. Installation
 
-If you are installing oktawave-cli from source, install the following dependencies first:
+If you are installing oktawave-cli from source, install the following Python
+module dependencies first:
 - suds
-- swift
+- swift or swiftclient
 - argparse
 - setproctitle
 - prettytable
