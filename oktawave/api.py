@@ -62,7 +62,6 @@ docs_clients = [
 ]
 
 DICT = {
-	'OCI_VM_CATEGORY' : 174,
 	'DB_VM_CATEGORY' : 324,
 	'UTF8_ENCODING' : 549,
 	'LATIN2_ENCODING' : 550,
@@ -138,8 +137,8 @@ class OktawaveApi:
 		return sp
 	def _dict_names(self, data, field = 'ItemName'):
 		return [getattr(item, field) for item in data if item.LanguageDictId == 2]
-	def _dict_item_name(self, data, sep = ', '):
-		return self._dict_names(data.DictionaryItemNames[0])[0]
+	def _dict_item_name(self, data, sep = ', ', field = 'ItemName'):
+		return self._dict_names(data.DictionaryItemNames[0], field)[0]
 	def _simple_vm_method(self, method, args):
 		"""Wraps around common simple virtual machine method call pattern"""
 		self._logon(args)
@@ -227,19 +226,28 @@ class OktawaveApi:
 
 	### OCI (VMs) ###
 
-	def OCI_Templates(self, args, category_id = DICT['OCI_VM_CATEGORY']):
-		"""Lists available templates"""
+	def OCI_TemplateCategories(self, args):
+		"""Lists available template categories"""
 		self._logon(args)
-		data = self.clients.call('GetTemplatesSimple', self.client_id, category_id)
-		res = dict((template.TemplateId, [template.TemplateName]) for template in data[0])
-		self.p.print_hash_table(res, ['Template ID', 'Template name'])
-	def OCI_TemplateInfo(self, args, category_id = DICT['OCI_VM_CATEGORY']):
+		data = self.common.call('GetTemplateCategories', self.client_id)
+		res = dict((tc.TemplateCategoryId, [
+			self._dict_names(tc.TemplateCategoryNames[0], 'CategoryName')[0],
+			self._dict_names(tc.TemplateCategoryNames[0], 'CategoryDescription')[0]
+		]) for tc in data[0])
+		self.p.print_hash_table(res, ['Template category ID', 'Name', 'Description'])
+	def OCI_Templates(self, args):
+		"""Lists templates in a category"""
+		self._logon(args)
+		data = self.common.call('GetTemplatesByCategory', args.id, None, None, self.client_id)
+		try:
+			res = dict((template.TemplateId, [template.TemplateName]) for template in data[0])
+			self.p.print_hash_table(res, ['Template ID', 'Template name'])
+		except IndexError:
+			print "No templates in this category.\n"
+	def OCI_TemplateInfo(self, args):
 		"""Shows more detailed info about a particular template"""
 		self._logon(args)
 		data = self.clients.call('GetTemplate', args.id, self.client_id)
-		if str(data.TemplateType.DictionaryItemId) != str(category_id):
-			print "ERROR: No such template found"
-			return 1
 		res = {
 			'-1 Template ID' : [data.TemplateId],
 			'0 VM class' : [self._dict_item_name(data.VMClass) + " (class ID: " + str(data.VMClass.DictionaryItemId) + ")" ],
@@ -331,7 +339,7 @@ class OktawaveApi:
 				disk.ClientHdd.HddName,
 				disk.ClientHdd.CapacityGB,
 				disk.ClientHdd.CreationDate,
-				disk.ClientHdd.CreationUser._x003C_FullName_x003E_k__BackingField,
+				disk.ClientHdd.CreationUser.FullName,
 				'Yes' if disk.IsPrimary else 'No'
 			] for disk in data.DiskDrives[0]
 		])

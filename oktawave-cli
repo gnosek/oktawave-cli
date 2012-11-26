@@ -18,7 +18,7 @@ import ConfigParser
 import os
 import readline
 
-VERSION = "0.7.1+svn"
+VERSION = "0.7.2"
 
 # Helpers to add subparsers based on simple descriptions
 # Use subparser.add_argument() if you need to make use of all argparse options
@@ -86,7 +86,10 @@ if(__name__ == '__main__'):
 		['Logs', 'Show virtual machine logs'],
 		['Settings', 'Show basic virtual machine settings'],
 	]) + [
-		['Templates', 'List available VM templates', []],
+		['TemplateCategories', 'Get available template categories', []],
+		['Templates', 'List available VM templates from a category', [
+			['id', 'Template category ID, as returned by "OCI TemplateCategories"', {'type' : int}]
+		]],
 		['TemplateInfo', 'Get detailed information about a particular template', [
 			['id', 'Template ID, as returned by "OCI Templates"', {'type' : int}]
 		]],

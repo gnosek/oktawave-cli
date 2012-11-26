@@ -3,3 +3,9 @@
 
 0.7.1
 - fixed login method call
+
+0.7.2
+- new method: OCI TemplateCategories
+- method OCI Templates now expects to receive a template category ID, as returned by "OCI TemplateCategories"
+- fixed error message when login failed
+- trying to import Connection from swiftclient (new) first, then from swift.client.common (old)
