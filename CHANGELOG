@@ -9,3 +9,8 @@
 - method OCI Templates now expects to receive a template category ID, as returned by "OCI TemplateCategories"
 - fixed error message when login failed
 - trying to import Connection from swiftclient (new) first, then from swift.client.common (old)
+
+0.7.3
+- fixed handling of non-ascii characters in OCI names
+- fixed OCI Settings method error and added and OPN list (patch by Michał Skalski, thanks)
+- fixed OCI TemplateCategories: some template categories were missing
