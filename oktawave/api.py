@@ -14,19 +14,19 @@ import socket
 # Patching some stuff in suds to get it working with SOAP 1.2
 suds.bindings.binding.envns = ('SOAP-ENV', 'http://www.w3.org/2003/05/soap-envelope')
 class SudsClientPatched(suds.client.SoapClient):
-    def headers(self):
-	"""
-	Get http headers or the http/https request.
-	@return: A dictionary of header/values.
-	@rtype: dict
-	"""
-	action = self.method.soap.action
-	if isinstance(action, unicode):
-	    action = action.encode('utf-8')
-	stock = { 'Content-Type' : 'application/soap+xml; charset=utf-8', 'SOAPAction': action }
-	result = dict(stock, **self.options.headers)
-	suds.client.log.debug('headers = %s', result)
-	return result
+	def headers(self):
+		"""
+		Get http headers or the http/https request.
+		@return: A dictionary of header/values.
+		@rtype: dict
+		"""
+		action = self.method.soap.action
+		if isinstance(action, unicode):
+			action = action.encode('utf-8')
+		stock = { 'Content-Type' : 'application/soap+xml; charset=utf-8', 'SOAPAction': action }
+		result = dict(stock, **self.options.headers)
+		suds.client.log.debug('headers = %s', result)
+		return result
 suds.client.SoapClient = SudsClientPatched
 
 # WSDL addresses
@@ -230,11 +230,19 @@ class OktawaveApi:
 		"""Lists available template categories"""
 		self._logon(args)
 		data = self.common.call('GetTemplateCategories', self.client_id)
-		res = dict((tc.TemplateCategoryId, [
+		self._d(data)
+		tcat = [[[tc.TemplateCategoryId,
 			self._dict_names(tc.TemplateCategoryNames[0], 'CategoryName')[0],
 			self._dict_names(tc.TemplateCategoryNames[0], 'CategoryDescription')[0]
-		]) for tc in data[0])
-		self.p.print_hash_table(res, ['Template category ID', 'Name', 'Description'])
+		], [[tcc.TemplateCategoryId,
+			self._dict_names(tcc.TemplateCategoryNames[0], 'CategoryName')[0],
+			self._dict_names(tcc.TemplateCategoryNames[0], 'CategoryDescription')[0]
+		] for tcc in ([] if tc.CategoryChildren is None else tc.CategoryChildren[0])]] for tc in data[0]]
+		ht = [['Template category ID', 'Name', 'Description']]
+		for mcat in tcat:
+			ht.extend([mcat[0]])
+			ht.extend([['  ' + str(t[0]), t[1], t[2]] for t in mcat[1]])
+		self.p.print_table(ht)
 	def OCI_Templates(self, args):
 		"""Lists templates in a category"""
 		self._logon(args)
