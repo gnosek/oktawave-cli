@@ -19,7 +19,7 @@ class Printer:
 			x.align = 'l'
 		for row in data[1:]:
 			x.add_row(row)
-		print x
+		print unicode(x)
 		for i in xrange(hmarg):
 			self._print('')
 	def _swift_object_type(self, data):
