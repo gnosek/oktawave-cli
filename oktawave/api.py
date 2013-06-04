@@ -15,17 +15,17 @@ import socket
 suds.bindings.binding.envns = ('SOAP-ENV', 'http://www.w3.org/2003/05/soap-envelope')
 class SudsClientPatched(suds.client.SoapClient):
     def headers(self):
-        """
-        Get http headers or the http/https request.
-        @return: A dictionary of header/values.
-        @rtype: dict
-        """
-        action = self.method.soap.action
-        if isinstance(action, unicode):
-            action = action.encode('utf-8')
-        stock = { 'Content-Type' : 'application/soap+xml; charset=utf-8', 'SOAPAction': action }
-        result = dict(stock, **self.options.headers)
-        suds.client.log.debug('headers = %s', result)
+	"""
+	Get http headers or the http/https request.
+	@return: A dictionary of header/values.
+	@rtype: dict
+	"""
+	action = self.method.soap.action
+	if isinstance(action, unicode):
+	    action = action.encode('utf-8')
+	stock = { 'Content-Type' : 'application/soap+xml; charset=utf-8', 'SOAPAction': action }
+	result = dict(stock, **self.options.headers)
+	suds.client.log.debug('headers = %s', result)
 	return result
 suds.client.SoapClient = SudsClientPatched
 
@@ -353,10 +353,12 @@ class OktawaveApi:
 			'DHCP branch',
 			'Gateway',
 			'Status',
-			'Primary',
+#			'Primary',
 			'Last changed',
 			'MAC address'
 		]]
+		self._d(data.IPs[0])
+#		sys.exit(0)
 		ips.extend([
 			[
 				ip.Address,
@@ -366,14 +368,29 @@ class OktawaveApi:
 				ip.DhcpBranch,
 				ip.Gateway,
 				self._dict_item_name(ip.IPStatus),
-				'Yes' if ip.IsPrimary else 'No',
+#				'Yes' if ip.IsPrimary else 'No',
 				ip.LastChangeDate,
 				ip.MacAddress
 			] for ip in data.IPs[0]
 		])
 		print "IP addresses"
 		self.p.print_table(ips)
-		self._d(self.common)
+		if data.PrivateIpv4:
+			vlans = [[
+				'IPv4 address',
+				'Created at',
+				'MAC address'
+			]]
+			vlans.extend([
+				[
+					vlan.PrivateIpAddress,
+					vlan.CreationDate,
+					vlan.MacAddress,
+				] for vlan in data.PrivateIpv4[0]
+			])
+			print "Private vlans"
+			self.p.print_table(vlans) 
+#		self._d(self.common)
 	def OCI_Create(self, args, forced_type = 'Machine', db_type = null()):
 		"""Creates a new instance from template"""
 		self._logon(args)
