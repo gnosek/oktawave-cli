@@ -11,6 +11,8 @@ except ImportError:
 import itertools
 import socket
 
+
+
 # Patching some stuff in suds to get it working with SOAP 1.2
 suds.bindings.binding.envns = ('SOAP-ENV', 'http://www.w3.org/2003/05/soap-envelope')
 class SudsClientPatched(suds.client.SoapClient):
@@ -146,8 +148,8 @@ class OktawaveApi:
 		print "OK"
 	def _ocs_prepare(self, args):
 		"""Wrapper method for OCS/swift API initialization"""
-		swift_username = self._logon(args, only_common = True)._x003C_Client_x003E_k__BackingField.VmwareFriendlyName
-		self.sc = Connection('https://ocs-pl.oktawave.com/auth/v1.0', swift_username + ':' + args.username, args.password)
+		#swift_username = self._logon(args, only_common = True)._x003C_Client_x003E_k__BackingField.VmwareFriendlyName
+		self.sc = Connection('https://ocs-pl.oktawave.com/auth/v1.0', args.ocs_username, args.ocs_password)
 		if hasattr(args, 'path'):
 			if args.path == None:
 				(c, x, p) = args.container.partition('/')
@@ -424,7 +426,7 @@ class OktawaveApi:
 	def OCI_Clone(self, args):
 		"""Clones a VM"""
 		self._logon(args)
-		self.clients.call('CloneVirtualMachine', args.id, args.name, self.client_id)
+		self.clients.call('CloneVirtualMachine', args.id, args.name, args.clonetype , self.client_id)
 		print "OK"
 
 	### OCS (storage) ###
@@ -507,7 +509,10 @@ class OktawaveApi:
 		disk.CapacityGB = args.capacity
 		disk.HddName = args.name
 		disk.HddStandardId = 47 + int(args.tier)
-		disk.IsShared = True
+		if args.disktype == 'shared':
+			disk.IsShared = True
+		else:
+			disk.IsShared = False
 		disk.PaymentTypeId = 37
 		disk.VirtualMachineIds = '' # this seems to solve the empty-array error problem, but certainly is not nice
 		self.clients.call('CreateDisk', disk, self.client_id)
@@ -523,13 +528,12 @@ class OktawaveApi:
 		if args.oci_id in vms:
 			print "ERROR: Disk is already mapped to this instance"
 			return 1
-		print disk
 		disk_mod = self.clients.create('ns3:ClientHddWithVMIds')
 		for attr in ['CapacityGB', 'ClientHddId', 'HddName', 'IsShared']:
 			setattr(disk_mod, attr, getattr(disk, attr))
 		disk_mod.HddStandardId = disk.HddStandard.DictionaryItemId
 		disk_mod.PaymentTypeId = disk.PaymentType.DictionaryItemId
-		disk_mod.VirtualMachineIds = self.clients.create('ns5:ArrayOfint')
+		disk_mod.VirtualMachineIds = self.clients.create('ns6:ArrayOfint')
 		disk_mod.VirtualMachineIds[0].extend(vms + [args.oci_id])
 		res = self.clients.call('UpdateDisk', disk_mod, self.client_id)
 		print "OK" if res else "ERROR: Disk cannot be mapped."
@@ -550,7 +554,7 @@ class OktawaveApi:
 			setattr(disk_mod, attr, getattr(disk, attr))
 		disk_mod.HddStandardId = disk.HddStandard.DictionaryItemId
 		disk_mod.PaymentTypeId = disk.PaymentType.DictionaryItemId
-		disk_mod.VirtualMachineIds = self.clients.create('ns5:ArrayOfint')
+		disk_mod.VirtualMachineIds = self.clients.create('ns6:ArrayOfint')
 		disk_mod.VirtualMachineIds[0].extend([vm for vm in vms if vm != args.oci_id])
 		if len(disk_mod.VirtualMachineIds[0]) == 0:
 			disk_mod.VirtualMachineIds = ''

@@ -34,6 +34,13 @@ password=PASSWORD
 and be put in ~/.oktawave-cli/config. You can specify a different path to the
 configuration file with the -c command line option.
 
+For OCS authentication you can use command-line arguments: -ocsu USERNAME -ocsp PASSWORD
+or put credentials to the config file in OCS section ex:
+
+[OCS]
+username=TestUser1795:admin
+password=PASSWORD
+
 
 3. Basic usage
 

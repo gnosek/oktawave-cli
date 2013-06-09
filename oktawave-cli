@@ -11,14 +11,14 @@ except ImportError:
 import logging
 import argparse
 import subprocess
-import logging
 import httplib
 from setproctitle import setproctitle
 import ConfigParser
 import os
 import readline
 
-VERSION = "0.7.3"
+
+VERSION = "0.7.4"
 
 # Helpers to add subparsers based on simple descriptions
 # Use subparser.add_argument() if you need to make use of all argparse options
@@ -66,6 +66,8 @@ if(__name__ == '__main__'):
 	parser.add_argument('-i', '--interactive', help="Enable interactive mode", action='store_true')
 	parser.add_argument('-u', '--username', help="Oktawave username")
 	parser.add_argument('-p', '--password', help="Oktawave password")
+	parser.add_argument('-ocsu', '--ocs-username', help="OCS username")
+	parser.add_argument('-ocsp', '--ocs-password', help="OCS password")
 	parser.add_argument('--nocache', action='store_true', help='Clear WSDL cache before proceeding')
 	parser.add_argument('-d', '--debug', action='store_true', help='Enable debugging output')
 	sysparser = parser
@@ -99,7 +101,8 @@ if(__name__ == '__main__'):
 		]],
 		['Clone', 'Clone a virtual machine', [
 			['id', 'Existing virtual machine ID, as returned by "OCI List"', {'type' : int}],
-			['name', 'Clone name']
+			['name', 'Clone name'],
+			['clonetype', 'Runtime: new root/administator password will be generated, new host name set etc. (Unmodified tech-support account required on OCI). AbsoluteCopy: initialization process will be skipped\n\tonly new IP address and domain name will be assigned.', {'choices': ['Runtime', 'AbsoluteCopy']}]
 		]],
 		['List', 'List virtual machines', []]
 	])
@@ -147,7 +150,8 @@ if(__name__ == '__main__'):
 		['Create', 'Add a new disk', [
 			['name', 'Disk name'],
 			['capacity', 'Disk capacity (GB)', {'type' : int}],
-			['tier', 'Disk tier (1, 2 or 3)', {'type' : int, 'choices' : [1, 2, 3]}]
+			['tier', 'Disk tier (1, 2 or 3)', {'type' : int, 'choices' : [1, 2, 3]}],
+			['disktype', 'If disk is shared or unshared?', {'choices': ['shared', 'unshared']}]
 		]],
 		['Map', 'Map a disk to an instance', [
 			['disk_id', 'Disk ID, as returned by "OVS List"', {'type' : int}],
@@ -241,6 +245,10 @@ if(__name__ == '__main__'):
 			args.username = config.get('Auth', 'username')
 		if args.password == None:
 			args.password = config.get('Auth', 'password')
+		if (args.ocs_username == None) and (args.namespace == 'OCS'):
+			args.ocs_username = config.get('OCS', 'username')
+		if (args.ocs_password == None) and (args.namespace =='OCS'):
+			args.ocs_password = config.get('OCS', 'password')	
 	except Exception as e:
 		print "Error reading the configuration file " + args.config_file + ": " + str(e)
 	if None in [args.username, args.password]:
@@ -250,7 +258,7 @@ if(__name__ == '__main__'):
 	if args.debug:
 		logger = logging.getLogger()
 		# uncomment if you want even more debug
-#		logger.root.setLevel(logging.DEBUG)
+		#logger.root.setLevel(logging.DEBUG)
 		logger.root.addHandler(logging.StreamHandler(sys.stdout))
 		logging.getLogger('suds.client').setLevel(logging.DEBUG)
 		logging.getLogger('suds.transport').setLevel(logging.DEBUG)

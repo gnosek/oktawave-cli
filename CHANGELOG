@@ -14,3 +14,8 @@
 - fixed handling of non-ascii characters in OCI names
 - fixed OCI Settings method error and added and OPN list (patch by Michał Skalski, thanks)
 - fixed OCI TemplateCategories: some template categories were missing
+
+0.7.4
+- fixed clone OCI
+- fixed map/unmap OVS to OCI
+- add handling OCS credentials
