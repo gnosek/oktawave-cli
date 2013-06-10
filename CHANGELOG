@@ -19,3 +19,4 @@
 - fixed clone OCI
 - fixed map/unmap OVS to OCI
 - add handling OCS credentials
+- fix ORDB Backups display

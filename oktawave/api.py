@@ -665,13 +665,13 @@ class OktawaveApi:
 		mysql_data = self.clients.call('GetBackups', DICT['MYSQL_DB'], self.client_id) or [[]]
 		psql_data = self.clients.call('GetBackups', DICT['POSTGRESQL_DB'], self.client_id) or [[]]
 		self.p.print_table([['File name', 'Database type', 'Full path']] + [[
-			b.Name,
+			b._x003C_Name_x003E_k__BackingField,
 			'MySQL',
-			b.ContainerName + "/" + b.FullPath
+			b._x003C_ContainerName_x003E_k__BackingField + "/" + b._x003C_FullPath_x003E_k__BackingField
 		] for b in mysql_data[0]] + [[
-			b.Name,
+			b._x003C_Name_x003E_k__BackingField,
 			'PostgreSQL',
-			b.ContainerName + "/" + b.FullPath
+			b._x003C_ContainerName_x003E_k__BackingField + "/" + b._x003C_FullPath_x003E_k__BackingField
 		] for b in psql_data[0]])
 	def ORDB_RestoreLogicalDatabase(self, args):
 		"""Restores a database from backup"""
