@@ -65,6 +65,8 @@ docs_clients = [
 
 DICT = {
 	'DB_VM_CATEGORY' : 324,
+	'MYSQL_TEMPLATE_CATEGORY' : 28,
+	'POSTGRESQL_TEMPLATE_CATEGORY' : 29,
 	'UTF8_ENCODING' : 549,
 	'LATIN2_ENCODING' : 550,
 	'MYSQL_DB' : 325,
@@ -245,12 +247,12 @@ class OktawaveApi:
 			ht.extend([mcat[0]])
 			ht.extend([['  ' + str(t[0]), t[1], t[2]] for t in mcat[1]])
 		self.p.print_table(ht)
-	def OCI_Templates(self, args):
+	def OCI_Templates(self, args, name_filter = ''):
 		"""Lists templates in a category"""
 		self._logon(args)
 		data = self.common.call('GetTemplatesByCategory', args.id, None, None, self.client_id)
 		try:
-			res = dict((template.TemplateId, [template.TemplateName]) for template in data[0])
+			res = dict((template.TemplateId, [template.TemplateName]) for template in data[0] if template.TemplateName.find(name_filter) != -1)
 			self.p.print_hash_table(res, ['Template ID', 'Template name'])
 		except IndexError:
 			print "No templates in this category.\n"
@@ -636,7 +638,12 @@ class OktawaveApi:
 		] for item in data[0]])
 	def ORDB_Templates(self, args):
 		"""Lists database VM templates"""
-		self.OCI_Templates(args, category_id = DICT['DB_VM_CATEGORY'])
+		print "\nCategory: MySQL"
+		args.id = DICT['MYSQL_TEMPLATE_CATEGORY']
+		self.OCI_Templates(args, 'ORDB')
+		print "Category: PostgreSQL"
+		args.id = DICT['POSTGRESQL_TEMPLATE_CATEGORY']
+		self.OCI_Templates(args, 'ORDB')
 	def ORDB_TemplateInfo(self, args):
 		"""Shows information about a template"""
 		self.OCI_TemplateInfo(args, category_id = DICT['DB_VM_CATEGORY'])
