@@ -10,5 +10,4 @@ setup(name='oktawave-cli',
       url='http://oktawave.com',
       requires=['suds', 'swift', 'argparse', 'setproctitle', 'prettytable'],
       license='GPLv3',
-      data_files = [("/usr/share/doc/oktawave-cli", ["LICENSE.txt", "README", "CHANGELOG"])]
      )
