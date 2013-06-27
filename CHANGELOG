@@ -21,3 +21,8 @@
 - add handling OCS credentials
 - fix ORDB Backups display
 - fixed ORDB Templates
+
+0.7.5
+- fixed OCS authentication in interactive mode (failed with credentials were read from the configuration file)
+- added option oci_class to OCI Create
+- fixed python dependencies in setup.py

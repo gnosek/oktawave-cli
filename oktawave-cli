@@ -18,7 +18,7 @@ import os
 import readline
 
 
-VERSION = "0.7.4"
+VERSION = "0.7.5"
 
 # Helpers to add subparsers based on simple descriptions
 # Use subparser.add_argument() if you need to make use of all argparse options
@@ -97,7 +97,8 @@ if(__name__ == '__main__'):
 		]],
 		['Create', 'Create a new VM instance from template', [
 			['template', 'Template ID, as returned by "OCI Templates"', {'type' : int}],
-			['name', 'VM name']
+			['name', 'VM name'],
+			['oci_class', 'OCI class name, for example "Small" or "Extreme". If not specified, the minimal class for the template is used.', {'nargs' : '?'}]
 		]],
 		['Clone', 'Clone a virtual machine', [
 			['id', 'Existing virtual machine ID, as returned by "OCI List"', {'type' : int}],
@@ -245,15 +246,20 @@ if(__name__ == '__main__'):
 			args.username = config.get('Auth', 'username')
 		if args.password == None:
 			args.password = config.get('Auth', 'password')
-		if (args.ocs_username == None) and (args.namespace == 'OCS'):
-			args.ocs_username = config.get('OCS', 'username')
-		if (args.ocs_password == None) and (args.namespace =='OCS'):
-			args.ocs_password = config.get('OCS', 'password')	
 	except Exception as e:
 		print "Error reading the configuration file " + args.config_file + ": " + str(e)
+	if (not hasattr(args, 'namespace') or args.namespace == 'OCS'):
+		try:
+			if args.ocs_username == None:
+				args.ocs_username = config.get('OCS', 'username')
+			if args.ocs_password == None:
+				args.ocs_password = config.get('OCS', 'password')	
+		except Exception as e:
+			if hasattr(args, 'namespace'):
+				print "Error reading OCS credentials from the configuration file, OCS methods will probably fail. Details: " + str(e)
 	if None in [args.username, args.password]:
 		print "ERROR: login credentials missing/incomplete"
-		sys.exit(1)		
+		sys.exit(1)
 
 	if args.debug:
 		logger = logging.getLogger()

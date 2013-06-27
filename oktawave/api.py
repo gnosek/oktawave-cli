@@ -73,7 +73,8 @@ DICT = {
 	'POSTGRESQL_DB' : 326,
 	'OCI_CONNECTION_ID' : 37,
 	'OCI_PAYMENT_ID' : 33,
-	'OCI_AUTOSCALING_ID' : 184
+	'OCI_AUTOSCALING_ID' : 184,
+	'OCI_CLASSES_DICT_ID' : 12
 }
 
 class OktawaveApi:
@@ -175,6 +176,14 @@ class OktawaveApi:
 		res = s.getsockname()[0]
 		s.close()
 		return res
+	def _oci_class_id(self, class_name):
+		"""Returns ID of an OCI class with a given name"""
+		classes = self.common.call('GetDictionaryItems', DICT['OCI_CLASSES_DICT_ID'], self.client_id)
+		name2id = dict([(self._dict_item_name(x), x['DictionaryItemId']) for x in classes[0]])
+		self._d(name2id)
+		if class_name in name2id:
+			return name2id[class_name]
+		return 0
 
 	### API methods below ###
 
@@ -230,6 +239,9 @@ class OktawaveApi:
 
 	### OCI (VMs) ###
 
+	def OCI_Test(self, args):
+		self._logon(args)
+		self._d(self._oci_class_id('Large'))
 	def OCI_TemplateCategories(self, args):
 		"""Lists available template categories"""
 		self._logon(args)
@@ -407,13 +419,19 @@ class OktawaveApi:
 		"""Creates a new instance from template"""
 		self._logon(args)
 		template = self.clients.call('GetTemplate', args.template, self.client_id)
+		oci_class_id = null()
+		if args.oci_class:
+			oci_class_id = self._oci_class_id(args.oci_class)
+			if not oci_class_id:
+				print "OCI class not found"
+				return
 		self._d(self.clients.client)
 		self.clients.call('CreateVirtualMachine',
 			args.template,
 			null(),
 			null(),
 			args.name,
-			null(),
+			oci_class_id,
 			null(),
 			DICT['OCI_PAYMENT_ID'],
 			DICT['OCI_CONNECTION_ID'],
