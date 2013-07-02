@@ -3,7 +3,6 @@ from printer import Printer
 from suds.sax.element import Element
 import sys
 import suds
-from suds import null
 try:
     from swiftclient import Connection
 except ImportError:
@@ -86,6 +85,9 @@ DICT = {
 }
 
 class OktawaveLoginError(RuntimeError):
+    pass
+
+class OktawaveOCIClassNotFound(ValueError):
     pass
 
 class OktawaveApi(object):
@@ -278,53 +280,62 @@ class OktawaveApi(object):
         self._logon(args)
         data = self.common.call('GetTemplateCategories', self.client_id)
         self._d(data)
-        tcat = [[[tc.TemplateCategoryId,
-                self._dict_names(
+
+        def _tc_info(tc, parent_id):
+            return {
+                'id': tc.TemplateCategoryId,
+                'name': self._dict_names(
                     tc.TemplateCategoryNames[0], 'CategoryName')[0],
-                self._dict_names(
-                    tc.TemplateCategoryNames[0], 'CategoryDescription')[0]
-                  ], [[tcc.TemplateCategoryId,
-                self._dict_names(
-                    tcc.TemplateCategoryNames[0], 'CategoryName')[0],
-                self._dict_names(
-                    tcc.TemplateCategoryNames[0], 'CategoryDescription')[0]
-                ] for tcc in ([] if tc.CategoryChildren is None else tc.CategoryChildren[0])]] for tc in data[0]]
-        ht = [['Template category ID', 'Name', 'Description']]
-        for mcat in tcat:
-            ht.extend([mcat[0]])
-            ht.extend([['  ' + str(t[0]), t[1], t[2]] for t in mcat[1]])
-        self.p.print_table(ht)
+                'description': self._dict_names(
+                    tc.TemplateCategoryNames[0], 'CategoryDescription')[0],
+                'parent_id': parent_id,
+            }
+
+        for tc in data[0]:
+            yield _tc_info(tc, None)
+            if tc.CategoryChildren is not None:
+                for tcc in tc.CategoryChildren[0]:
+                    yield _tc_info(tcc, tc.TemplateCategoryId)
 
     def OCI_Templates(self, args, name_filter=''):
         """Lists templates in a category"""
         self._logon(args)
         data = self.common.call(
             'GetTemplatesByCategory', args.id, None, None, self.client_id)
-        try:
-            res = dict((template.TemplateId, [template.TemplateName])
-                       for template in data[0] if template.TemplateName.find(name_filter) != -1)
-            self.p.print_hash_table(res, ['Template ID', 'Template name'])
-        except IndexError:
-            print "No templates in this category.\n"
+        if data:
+            return dict((template.TemplateId, template.TemplateName)
+                       for template in data[0] if name_filter in template.TemplateName)
 
     def OCI_TemplateInfo(self, args):
         """Shows more detailed info about a particular template"""
         self._logon(args)
         data = self.clients.call('GetTemplate', args.id, self.client_id)
-        res = {
-            '-1 Template ID': [data.TemplateId],
-            '0 VM class': [self._dict_item_name(data.VMClass) + " (class ID: " + str(data.VMClass.DictionaryItemId) + ")"],
-            '1 Name': [data.Name],
-            '2 Template name': [data.TemplateName],
-            '3 System category': [self._dict_item_name(data.TemplateSystemCategory)],
-            '4 Template category': ['/'.join(self._dict_names(data.TemplateCategory.TemplateCategoryNames[0], field='CategoryName'))],
-            '5 Software': [', '.join(['/'.join(self._dict_names(s.Software.SoftwareNames[0], field="Name")) for s in data.SoftwareList[0]])],
-            '6 Ethernet controllers': [data.EthernetControllersCount],
-            '7 Connection': [self._dict_item_name(data.ConnectionType)],
-            '8 Disk drives': [', '.join([hdd.HddName + " (" + str(hdd.CapacityGB) + " GB" + (', Primary' if hdd.IsPrimary else '') + ")" for hdd in data.DiskDrives[0]])],
-            '9 Description': [data.Description]
+
+        template_category = '/'.join(self._dict_names(
+            data.TemplateCategory.TemplateCategoryNames[0], field='CategoryName'))
+
+        software = ', '.join([
+            '/'.join(self._dict_names(s.Software.SoftwareNames[0], field="Name"))
+            for s in data.SoftwareList[0]])
+
+        return {
+            'template_id': data.TemplateId,
+            'template_name': data.TemplateName,
+            'template_category': template_category,
+            'vm_class_id': data.VMClass.DictionaryItemId,
+            'vm_class_name': self._dict_item_name(data.VMClass),
+            'system_category_name': self._dict_item_name(data.TemplateSystemCategory),
+            'label': data.Name,
+            'software': software,
+            'eth_count': data.EthernetControllersCount,
+            'connection_type': self._dict_item_name(data.ConnectionType),
+            'disks': [{
+                    'name': hdd.HddName,
+                    'capacity_gb': hdd.CapacityGB,
+                    'is_primary': hdd.IsPrimary
+                } for hdd in data.DiskDrives[0]],
+            'description': data.Description
         }
-        self.p.print_hash_table(res, ['Key', 'Value'], order=True)
 
     def OCI_List(self, args):
         """Lists client's virtual machines"""
@@ -334,13 +345,12 @@ class OktawaveApi(object):
         sp.ClientId = self.client_id
         vms = self.clients.call('GetVirtualMachines', sp)
         self._d(vms)
-        res = [['Virtual machine ID', 'Name', 'Class']]
-        res.extend([[
-            vm.VirtualMachineId,
-            vm.VirtualMachineName,
-            self._dict_item_name(vm.VMClass)
-        ] for vm in vms._results[0]])
-        self.p.print_table(res)
+        for vm in vms._results[0]:
+            yield {
+                'id': vm.VirtualMachineId,
+                'name': vm.VirtualMachineName,
+                'class_name': self._dict_item_name(vm.VMClass)
+            }
 
     def OCI_Restart(self, args):
         """Restarts given VM"""
@@ -369,139 +379,95 @@ class OktawaveApi(object):
         data = self.clients.call(
             'GetVirtualMachineHistories', sp, self.client_id)
         self._d(data)
-        res = [['Time', 'Operation type', 'User', 'Status']]
-        res.extend([[
-            op.CreationDate,
-            self._dict_item_name(op.OperationType),
-            op.CreationUser.FullName,
-            self._dict_item_name(op.Status)
-        ] for op in data._results[0]])
-        self.p.print_table(res)
+        for op in data._results[0]:
+            yield {
+                'time': op.CreationDate,
+                'type': self._dict_item_name(op.OperationType),
+                'user_name': op.CreationUser.FullName,
+                'status': self._dict_item_name(op.Status)
+            }
 
     def OCI_Settings(self, args):
         """Shows basic VM settings (IP addresses, OS, names, autoscaling etc.)"""
         self._logon(args)
         data = self.clients.call(
             'GetVirtualMachineById', args.id, self.client_id)
-        print 'Basic VM settings and statistics'
-        res = {
-            '0 Autoscaling': [self._dict_item_name(data.AutoScalingType)],
-            '1 Connection': [self._dict_item_name(data.ConnectionType)],
-            '2 CPU (MHz)': [data.CpuMhz],
-            '3 CPU usage (MHz)': [data.CpuMhzUsage],
-            '4 Creation date': [data.CreationDate],
-            '5 Created by': [data.CreationUserSimple.FullName],
-            '6 IOPS usage': [data.IopsUsage],
-            '7 Last changed': [data.LastChangeDate],
-            '8 Payment type': [self._dict_item_name(data.PaymentType)],
-            '9 RAM (MB)': [data.RamMB],
-            '10 RAM usage (MB)': [data.RamMBUsage],
-            '11 Status': [self._dict_item_name(data.Status)],
-            '12 Name': [data.VirtualMachineName],
-            '13 Class': [self._dict_item_name(data.VMClass)]
-        }
-        self.p.print_hash_table(res, ['Key', 'Value'], order=True)
-        disks = [[
-            'Name',
-            'Capacity (GB)',
-            'Created at',
-            'Created by',
-            'Primary'
-        ]]
-        disks.extend([
-            [
-            disk.ClientHdd.HddName,
-            disk.ClientHdd.CapacityGB,
-            disk.ClientHdd.CreationDate,
-            disk.ClientHdd.CreationUser.FullName,
-            'Yes' if disk.IsPrimary else 'No'
-            ] for disk in data.DiskDrives[0]
-        ])
-        print "Hard disks"
-        self.p.print_table(disks)
-        ips = [[
-            'IPv4 address',
-            'IPv6 address',
-            'Created at',
-               #			'Created by',
-               'DHCP branch',
-               'Gateway',
-               'Status',
-               #			'Primary',
-               'Last changed',
-               'MAC address'
-               ]]
-        self._d(data.IPs[0])
-#		sys.exit(0)
-        ips.extend([
-            [
-            ip.Address,
-            ip.AddressV6,
-            ip.CreationDate,
-            #				ip.CreationUser._x003C_FullName_x003E_k__BackingField,
-            ip.DhcpBranch,
-            ip.Gateway,
-            self._dict_item_name(ip.IPStatus),
-#				'Yes' if ip.IsPrimary else 'No',
-            ip.LastChangeDate,
-            ip.MacAddress
-            ] for ip in data.IPs[0]
-        ])
-        print "IP addresses"
-        self.p.print_table(ips)
-        if data.PrivateIpv4:
-            vlans = [[
-                'IPv4 address',
-                'Created at',
-                'MAC address'
-            ]]
-            vlans.extend([
-                [
-                vlan.PrivateIpAddress,
-                vlan.CreationDate,
-                vlan.MacAddress,
-                ] for vlan in data.PrivateIpv4[0]
-            ])
-            print "Private vlans"
-            self.p.print_table(vlans)
-#		self._d(self.common)
 
-    def OCI_Create(self, args, forced_type='Machine', db_type=null()):
+        res = {
+            'autoscaling': self._dict_item_name(data.AutoScalingType),
+            'connection_type': self._dict_item_name(data.ConnectionType),
+            'cpu_mhz': data.CpuMhz,
+            'cpu_usage_mhz': data.CpuMhzUsage,
+            'creation_date': data.CreationDate,
+            'creation_user_name': data.CreationUserSimple.FullName,
+            'iops_usage': data.IopsUsage,
+            'last_change_date': data.LastChangeDate,
+            'payment_type': self._dict_item_name(data.PaymentType),
+            'memory_mb': data.RamMB,
+            'memory_usage_mb': data.RamMBUsage,
+            'status': self._dict_item_name(data.Status),
+            'name': data.VirtualMachineName,
+            'vm_class_name': self._dict_item_name(data.VMClass),
+            'disks': [{
+                'name': disk.ClientHdd.HddName,
+                'capacity_gb': disk.ClientHdd.CapacityGB,
+                'creation_date': disk.ClientHdd.CreationDate,
+                'creation_user_name': disk.ClientHdd.CreationUser.FullName,
+                'is_primary': disk.IsPrimary
+            } for disk in data.DiskDrives[0]],
+            'ips': [{
+                'ipv4': ip.Address,
+                'ipv6': ip.AddressV6,
+                'creation_date': ip.CreationDate,
+                'dhcp_branch': ip.DhcpBranch,
+                'gateway': ip.Gateway,
+                'status': self._dict_item_name(ip.IPStatus),
+                'last_change_date': ip.LastChangeDate,
+                'macaddr': ip.MacAddress,
+            } for ip in data.IPs[0]],
+            'vlans': [],
+        }
+        if data.PrivateIpv4:
+            res['vlans'] = [{
+                'ipv4': vlan.PrivateIpAddress,
+                'creation_date': vlan.CreationDate,
+                'macaddr': vlan.MacAddress,
+            } for vlan in data.PrivateIpv4[0]]
+
+        return res
+
+    def OCI_Create(self, args, forced_type='Machine', db_type=None):
         """Creates a new instance from template"""
         self._logon(args)
         template = self.clients.call(
             'GetTemplate', args.template, self.client_id)
-        oci_class_id = null()
+        oci_class_id = None
         if args.oci_class:
             oci_class_id = self._oci_class_id(args.oci_class)
             if not oci_class_id:
-                print "OCI class not found"
-                return
-        self._d(self.clients.client)
+                raise OktawaveOCIClassNotFound()
         self.clients.call('CreateVirtualMachine',
                           args.template,
-                          null(),
-                          null(),
+                          None,
+                          None,
                           args.name,
                           oci_class_id,
-                          null(),
+                          None,
                           DICT['OCI_PAYMENT_ID'],
                           DICT['OCI_CONNECTION_ID'],
                           self.client_id,
-                          null(),
+                          None,
                           forced_type,
                           db_type,
-                          null(),
+                          None,
                           DICT['OCI_AUTOSCALING_ID']
                           )
-        print "OK"
 
     def OCI_Clone(self, args):
         """Clones a VM"""
         self._logon(args)
         self.clients.call(
             'CloneVirtualMachine', args.id, args.name, args.clonetype, self.client_id)
-        print "OK"
 
     # OCS (storage) ###
 
