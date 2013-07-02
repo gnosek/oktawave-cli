@@ -1,13 +1,8 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import suds
 import sys
-try:
-	from oktawave.api import OktawaveApi
-except ImportError:
-	sys.path.append('/usr/local/lib/python2.6/dist-packages')
-	sys.path.append('/usr/local/lib/python2.7/dist-packages')
-	from oktawave.api import OktawaveApi
+from oktawave.api import OktawaveApi
 import logging
 import argparse
 import subprocess
