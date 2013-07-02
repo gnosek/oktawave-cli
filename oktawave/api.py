@@ -85,6 +85,8 @@ DICT = {
     'OCI_CLASSES_DICT_ID': 12
 }
 
+class OktawaveLoginError(RuntimeError):
+    pass
 
 class OktawaveApi(object):
 
@@ -143,8 +145,7 @@ class OktawaveApi(object):
             res = self.common.call(
                 'LogonUser', args.username, args.password, self._get_machine_ip(), "Oktawave CLI")
         except AttributeError:
-            print "ERROR: Couldn't login to Oktawave."
-            sys.exit(1)
+            raise OktawaveLoginError()
         self.client_id = res._x003C_Client_x003E_k__BackingField.ClientId
         self.client_object = res
         return res
@@ -168,7 +169,6 @@ class OktawaveApi(object):
         """Wraps around common simple virtual machine method call pattern"""
         self._logon(args)
         self.clients.call(method, args.id, self.client_id)
-        print "OK"
 
     def _ocs_prepare(self, args):
         """Wrapper method for OCS/swift API initialization"""
@@ -228,50 +228,44 @@ class OktawaveApi(object):
 
         """
         self._logon(args, only_common=True)
-        res = {}
         client = self.client_object
-        res['Time zone'] = [
-            client._x003C_TimeZone_x003E_k__BackingField.DisplayName]
-        res['Currency'] = [self._dict_item_name(
-            client._x003C_Currency_x003E_k__BackingField)]
-        res['Date format'] = [self._dict_item_name(
-            client._x003C_DateFormat_x003E_k__BackingField)]
-        res['Availability zone'] = [self._dict_item_name(
-            self.common.call('GetDictionaryItemById', client._x003C_AvailabilityZone_x003E_k__BackingField))]
-        res['24h clock'] = [
-            'Yes' if client._x003C_Is24HourClock_x003E_k__BackingField else 'No']
-        self.p._print("Account settings:")
-        self.p.print_hash_table(res, ['Key', 'Value'])
-        # TODO: probably print more settings
+        # TODO: probably get more settings
+        return {
+            'time_zone': client._x003C_TimeZone_x003E_k__BackingField.DisplayName,
+            'currency': self._dict_item_name(client._x003C_Currency_x003E_k__BackingField),
+            'date_format': self._dict_item_name(client._x003C_DateFormat_x003E_k__BackingField),
+            'availability_zone': self._dict_item_name(
+                self.common.call('GetDictionaryItemById', client._x003C_AvailabilityZone_x003E_k__BackingField)),
+            '24h_clock': client._x003C_Is24HourClock_x003E_k__BackingField,
+        }
 
     def Account_RunningJobs(self, args):
         self._logon(args)
         res = self.common.call('GetRunningOperations', self.client_id)
         if str(res) == '':
-            print "No running operations"
             return
-        self.p.print_table([['Operation ID', 'Started at', 'Started by', 'Operation type', 'Object', 'Progress', 'Status']] + [[
-            op.AsynchronousOperationId,
-            op.CreationDate,
-            op.CreationUserFullName,
-            self._dict_item_name(op.OperationType),
-            self._dict_item_name(op.ObjectType) + ": " + op.ObjectName,
-            str(op.Progress) + "%",
-            self._dict_item_name(op.Status)
-        ] for op in res[0]])
+        for op in res[0]:
+            yield {
+                'id': op.AsynchronousOperationId,
+                'creation_date': op.CreationDate,
+                'creation_user_name': op.CreationUserFullName,
+                'type': self._dict_item_name(op.OperationType),
+                'object_type': self._dict_item_name(op.ObjectType),
+                'object_name': op.ObjectName,
+                'progress_percent': op.Progress,
+                'status': self._dict_item_name(op.Status)
+            }
 
     def Account_Users(self, args):
         """Print users in client account."""
         self._logon(args)
         users = self.clients.call('GetClientUsers', self.client_id)
-        res = [['Client ID', 'E-mail', 'Name']]
         self._d(users)
-        res.extend([[
-            self.client_id,
-            user._x003C_Email_x003E_k__BackingField,
-            user._x003C_FullName_x003E_k__BackingField
-        ] for user in users[0]])
-        self.p.print_table(res)
+        for user in users[0]:
+            yield {
+                'email': user._x003C_Email_x003E_k__BackingField,
+                'name': user._x003C_FullName_x003E_k__BackingField,
+            }
 
     # OCI (VMs) ###
 
