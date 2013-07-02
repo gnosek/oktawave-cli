@@ -86,7 +86,7 @@ DICT = {
 }
 
 
-class OktawaveApi:
+class OktawaveApi(object):
 
     def __init__(self, args, output=sys.stdout):
         """Initialize the API instance
