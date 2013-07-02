@@ -128,10 +128,6 @@ class OktawaveApi:
         self._init_common(args)
         self._init_clients(args)
 
-    def _print(self, *args):
-        """Proxy method to print strings"""
-        self.p._print(*args)
-
     def _logon(self, args, only_common=False):
         """Initializes CommonService client and calls LogonUser method.
 
@@ -244,7 +240,7 @@ class OktawaveApi:
             self.common.call('GetDictionaryItemById', client._x003C_AvailabilityZone_x003E_k__BackingField))]
         res['24h clock'] = [
             'Yes' if client._x003C_Is24HourClock_x003E_k__BackingField else 'No']
-        self._print("Account settings:")
+        self.p._print("Account settings:")
         self.p.print_hash_table(res, ['Key', 'Value'])
         # TODO: probably print more settings
 
