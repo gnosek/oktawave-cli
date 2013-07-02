@@ -2,7 +2,7 @@
 
 import suds
 import sys
-from oktawave.api import OktawaveApi
+from oktawave.cli import OktawaveCli
 import logging
 import argparse
 import subprocess
@@ -221,7 +221,7 @@ if(__name__ == '__main__'):
 	# adding dummy "---" help string to found methods that are not
 	# documented yet (this gotta go when finished, or probably should be done in
 	# debug mode only)
-	for m in dir(OktawaveApi):
+	for m in dir(OktawaveCli):
 		if m[0] == '_':
 			continue
 		(ns, x, cmd) = m.partition('_')
@@ -248,7 +248,7 @@ if(__name__ == '__main__'):
 			if args.ocs_username == None:
 				args.ocs_username = config.get('OCS', 'username')
 			if args.ocs_password == None:
-				args.ocs_password = config.get('OCS', 'password')	
+				args.ocs_password = config.get('OCS', 'password')
 		except Exception as e:
 			if hasattr(args, 'namespace'):
 				print "Error reading OCS credentials from the configuration file, OCS methods will probably fail. Details: " + str(e)
@@ -268,7 +268,7 @@ if(__name__ == '__main__'):
 	if args.interactive:
 		print "This is Oktawave CLI, version " + VERSION + '.'
 		print "Logging in to Oktawave..."
-		api = OktawaveApi(args)
+		api = OktawaveCli(args)
 		api._logon(args)
 		print "Successfully logged in as " + args.username + '.'
 		print 'Type a command, or "help" to get help.'
@@ -306,7 +306,7 @@ if(__name__ == '__main__'):
 				continue
 		sys.exit(1)
 	# non-interactive mode - just execute the command
-	api = OktawaveApi(args)
+	api = OktawaveCli(args)
 	method = getattr(api, args.namespace + '_' + args.command)
 	res = method(args)
 	if res != None:
