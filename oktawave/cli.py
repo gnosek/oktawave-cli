@@ -1,4 +1,4 @@
-from oktawave.api import OktawaveApi
+from oktawave.api import OktawaveApi, DICT as OktawaveConstants
 from oktawave.exceptions import *
 import sys
 
@@ -28,6 +28,11 @@ class OktawaveCli(OktawaveApi):
         ]
         self.p._print("Account settings:")
         self.p.print_table(tab)
+
+    def _print_table(self, head, results, mapper_func):
+        items = map(mapper_func, results)
+        if items:
+            self.p.print_table([head] + items)
 
     def Account_RunningJobs(self, args):
         ops = super(OktawaveCli, self).Account_RunningJobs(args)
@@ -345,3 +350,121 @@ class OktawaveCli(OktawaveApi):
             print "ERROR: Disk cannot be unmapped."
         else:
             print "OK"
+
+    def ORDB_List(self, args):
+        """Lists databases"""
+        dbs = super(OktawaveCli, self).ORDB_List(args)
+        def fmt(db):
+            return [
+                db['id'],
+                db['name'],
+                db['type'],
+                db['size'],
+                db['available_space']
+            ]
+        self._print_table(
+            ['Virtual machine ID', 'Name', 'Type', 'Size', 'Available space'],
+            dbs, fmt)
+
+    def ORDB_TurnOn(self, args):
+        """Turns a database on"""
+        super(OktawaveCli, self).ORDB_TurnOn(args)
+
+    def ORDB_TurnOff(self, args):
+        """Turns a database off"""
+        super(OktawaveCli, self).ORDB_TurnOff(args)
+
+    def ORDB_Restart(self, args):
+        """Restarts a database"""
+        super(OktawaveCli, self).ORDB_Restart(args)
+
+    def ORDB_Clone(self, args):
+        """Clones a database VM"""
+        self.OCI_Clone(args)
+
+    def ORDB_Delete(self, args):
+        """Deletes a database or VM"""
+        super(OktawaveCli, self).ORDB_Delete(args)
+
+    def ORDB_Logs(self, args):
+        """Shows database VM logs"""
+        self.OCI_Logs(args)
+
+    def ORDB_LogicalDatabases(self, args):
+        """Shows logical databases"""
+        dbs = super(OktawaveCli, self).ORDB_LogicalDatabases(args)
+        def fmt(db):
+            return [
+                db['id'],
+                db['name'],
+                db['type'],
+                db['encoding'],
+                'Yes' if db['is_running'] else 'No',
+                db['QPS'],
+                db['Size']
+            ]
+        self._print_table(
+            ['Virtual machine ID', 'Name', 'Type', 'Encoding', 'Running', 'QPS', 'Size'],
+            dbs, fmt)
+
+    def ORDB_Settings(self, args):
+        """Shows database VM settings"""
+        self.OCI_Settings(args)
+
+    def ORDB_Create(self, args):
+        """Creates a database VM"""
+        try:
+            super(OktawaveCli, self).ORDB_Create(args)
+        except OktawaveORDBInvalidTemplateError:
+            print "ERROR: Selected template is not a database template"
+            return 1
+
+    def ORDB_GlobalSettings(self, args):
+        """Shows global database engine settings"""
+        settings = super(OktawaveCli, self).ORDB_GlobalSettings(args)
+        def fmt(item):
+            return [item['name'], item['value']]
+        self._print_table(['Name', 'Value'], settings, fmt)
+
+    def ORDB_Templates(self, args):
+        """Lists database VM templates"""
+        print "\nCategory: MySQL"
+        args.id = OktawaveConstants['MYSQL_TEMPLATE_CATEGORY']
+        self.OCI_Templates(args, 'ORDB')
+        print "Category: PostgreSQL"
+        args.id = OktawaveConstants['POSTGRESQL_TEMPLATE_CATEGORY']
+        self.OCI_Templates(args, 'ORDB')
+
+    def ORDB_TemplateInfo(self, args):
+        """Shows information about a template"""
+        self.OCI_TemplateInfo(args, category_id=OktawaveConstants['DB_VM_CATEGORY'])
+
+    def ORDB_CreateLogicalDatabase(self, args):
+        """Creates a new logical database within an instance"""
+        super(OktawaveCli, self).ORDB_CreateLogicalDatabase(args)
+        print "OK"
+
+    def ORDB_BackupLogicalDatabase(self, args):
+        """Creates a backup of logical database"""
+        super(OktawaveCli, self).ORDB_BackupLogicalDatabase(args)
+        print "OK"
+
+    def ORDB_MoveLogicalDatabase(self, args):
+        """Moves a logical database"""
+        super(OktawaveCli, self).ORDB_MoveLogicalDatabase(args)
+        print "OK"
+
+    def ORDB_Backups(self, args):
+        """Lists logical database backups"""
+        backups = super(OktawaveCli, self).ORDB_Backups(args)
+        def fmt(b):
+            return [b['file_name'], b['type'], b['path']]
+
+        self._print_table(
+            ['File name', 'Database type', 'Full path'],
+            backups, fmt)
+
+    def ORDB_RestoreLogicalDatabase(self, args):
+        """Restores a database from backup"""
+        super(OktawaveCli, self).ORDB_RestoreLogicalDatabase(args)
+        print "OK"
