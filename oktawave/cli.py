@@ -1,8 +1,13 @@
 from oktawave.api import OktawaveApi, DICT as OktawaveConstants
 from oktawave.exceptions import *
+from oktawave.printer import Printer
 import sys
 
 class OktawaveCli(OktawaveApi):
+
+    def __init__(self, args, output=sys.stdout):
+        super(OktawaveCli, self).__init__(args, output)
+        self.p = Printer(output)
 
     def _logon(self, args, only_common=False):
         try:

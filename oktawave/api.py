@@ -1,5 +1,4 @@
 from client import ApiClient
-from printer import Printer
 from exceptions import *
 from suds.sax.element import Element
 import sys
@@ -94,7 +93,6 @@ class OktawaveApi(object):
         - args - reserved for future use
         - output - stream to which the results should be printed
         """
-        self.p = Printer(output)
         self.debug = args.debug
 
     # HELPER METHODS ###
