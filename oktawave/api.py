@@ -176,7 +176,7 @@ class OktawaveApi(object):
         """Wrapper method for OCS/swift API initialization"""
         # swift_username = self._logon(args, only_common =
         # True)._x003C_Client_x003E_k__BackingField.VmwareFriendlyName
-        self.sc = Connection(
+        sc = Connection(
             'https://ocs-pl.oktawave.com/auth/v1.0', args.ocs_username, args.ocs_password)
         if hasattr(args, 'path'):
             if args.path == None:
@@ -184,6 +184,8 @@ class OktawaveApi(object):
                 args.container = c
                 if p != '':
                     args.path = p
+
+        return sc
 
     def _find_disk(self, disk_id):
         """Finds a disk (OVS) by id"""
@@ -468,67 +470,6 @@ class OktawaveApi(object):
         self._logon(args)
         self.clients.call(
             'CloneVirtualMachine', args.id, args.name, args.clonetype, self.client_id)
-
-    # OCS (storage) ###
-
-    def OCS_ListContainers(self, args):
-        """Lists containers"""
-        self._ocs_prepare(args)
-        account = self.sc.get_account()
-        if str(account.__class__) == "<type 'tuple'>":
-            account = account[1]
-        self.p.print_hash_table(
-            dict((o['name'], [o['count'], o['bytes']]) for o in account),
-            ['Container name', 'Objects count', 'Size in bytes']
-        )
-
-    def OCS_Get(self, args):
-        """Gets an object or file"""
-        self._ocs_prepare(args)
-        if args.path == None:
-            self.p.print_swift_container(self.sc.get_container(args.container))
-        else:
-            self.p.print_swift_file(
-                self.sc.get_object(args.container, args.path))
-
-    def OCS_List(self, args):
-        """Lists content of a directory or container"""
-        self._ocs_prepare(args)
-        obj = self.sc.get_container(
-            args.container)  # TODO: perhaps we can optimize it not to download the whole container when not necessary
-        self.p.list_swift_objects(obj, args.path, cname=args.container)
-
-    def OCS_CreateContainer(self, args):
-        """Creates a new container"""
-        self._ocs_prepare(args)
-        self.sc.put_container(args.name)
-        print "OK"
-
-    def OCS_CreateDirectory(self, args):
-        """Creates a new directory within a container"""
-        self._ocs_prepare(args)
-        self.sc.put_object(
-            args.container, args.path, None, content_type='application/directory')
-        print "OK"
-
-    def OCS_Put(self, args):
-        """Uploads a file to the server"""
-        self._ocs_prepare(args)
-        fh = open(args.local_path, 'r')
-        self.sc.put_object(args.container, args.path, fh)
-        print "OK"
-
-    def OCS_Delete(self, args):
-        """Deletes an object from a container"""
-        self._ocs_prepare(args)
-        self.sc.delete_object(args.container, args.path)
-        print "OK"
-
-    def OCS_DeleteContainer(self, args):
-        """Deletes a whole container"""
-        self._ocs_prepare(args)
-        self.sc.delete_container(args.container)
-        print "OK"
 
     # OVS (disks) ###
 

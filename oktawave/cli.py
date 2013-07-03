@@ -239,3 +239,61 @@ class OktawaveCli(OktawaveApi):
     def OCI_Clone(self, args):
         """Clones a VM"""
         super(OktawaveCli, self).OCI_Clone(args)
+
+    def OCS_ListContainers(self, args):
+        """Lists containers"""
+        sc = super(OktawaveCli, self)._ocs_prepare(args)
+        headers, containers = sc.get_account()
+        self.p.print_hash_table(
+            dict((o['name'], [o['count'], o['bytes']]) for o in containers),
+            ['Container name', 'Objects count', 'Size in bytes']
+        )
+
+    def OCS_Get(self, args):
+        """Gets an object or file"""
+        sc = super(OktawaveCli, self)._ocs_prepare(args)
+        if args.path == None:
+            self.p.print_swift_container(sc.get_container(args.container))
+        else:
+            self.p.print_swift_file(
+                sc.get_object(args.container, args.path))
+
+    def OCS_List(self, args):
+        """Lists content of a directory or container"""
+        sc = super(OktawaveCli, self)._ocs_prepare(args)
+        obj = sc.get_container(
+            args.container)  # TODO: perhaps we can optimize it not to download the whole container when not necessary
+        self.p.list_swift_objects(obj, args.path, cname=args.container)
+
+    def OCS_CreateContainer(self, args):
+        """Creates a new container"""
+        sc = super(OktawaveCli, self)._ocs_prepare(args)
+        sc.put_container(args.name)
+        print "OK"
+
+    def OCS_CreateDirectory(self, args):
+        """Creates a new directory within a container"""
+        sc = super(OktawaveCli, self)._ocs_prepare(args)
+        sc.put_object(
+            args.container, args.path, None, content_type='application/directory')
+        print "OK"
+
+    def OCS_Put(self, args):
+        """Uploads a file to the server"""
+        sc = super(OktawaveCli, self)._ocs_prepare(args)
+        fh = open(args.local_path, 'r')
+        sc.put_object(args.container, args.path, fh)
+        print "OK"
+
+    def OCS_Delete(self, args):
+        """Deletes an object from a container"""
+        sc = super(OktawaveCli, self)._ocs_prepare(args)
+        sc.delete_object(args.container, args.path)
+        print "OK"
+
+    def OCS_DeleteContainer(self, args):
+        """Deletes a whole container"""
+        sc = super(OktawaveCli, self)._ocs_prepare(args)
+        sc.delete_container(args.container)
+        print "OK"
+
