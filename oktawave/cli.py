@@ -16,10 +16,10 @@ class OktawaveCli(object):
             print "ERROR: Couldn't login to Oktawave."
             sys.exit(1)
 
-    def _simple_vm_method(self, method, args):
-        """Wraps around common simple virtual machine method call pattern"""
-        self.api._simple_vm_method(method, args)
-        print "OK"
+    def _print_table(self, head, results, mapper_func):
+        items = map(mapper_func, results)
+        if items:
+            self.p.print_table([head] + items)
 
     def Account_Settings(self, args):
         res = self.api.Account_Settings(args)
@@ -33,11 +33,6 @@ class OktawaveCli(object):
         ]
         self.p._print("Account settings:")
         self.p.print_table(tab)
-
-    def _print_table(self, head, results, mapper_func):
-        items = map(mapper_func, results)
-        if items:
-            self.p.print_table([head] + items)
 
     def Account_RunningJobs(self, args):
         ops = self.api.Account_RunningJobs(args)
