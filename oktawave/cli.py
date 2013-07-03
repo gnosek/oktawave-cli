@@ -20,6 +20,8 @@ class OktawaveCli(object):
         items = map(mapper_func, results)
         if items:
             self.p.print_table([head] + items)
+            return True
+        return False
 
     def Account_Settings(self, args):
         res = self.api.Account_Settings(args)
@@ -36,44 +38,50 @@ class OktawaveCli(object):
 
     def Account_RunningJobs(self, args):
         ops = self.api.Account_RunningJobs(args)
-        head = [['Operation ID', 'Started at', 'Started by', 'Operation type', 'Object', 'Progress', 'Status']]
-        items = [[
-            op['id'],
-            op['creation_date'],
-            op['creation_user_name'],
-            op['type'],
-            '%(object_type)s: %(object_name)s' % op,
-            '%(progress_percent)d%%' % op,
-            op['status'],
-        ] for op in ops]
-        if items:
-            self.p.print_table(head + items)
-        else:
+        def fmt(op):
+            return [
+                op['id'],
+                op['creation_date'],
+                op['creation_user_name'],
+                op['type'],
+                '%(object_type)s: %(object_name)s' % op,
+                '%(progress_percent)d%%' % op,
+                op['status']
+            ]
+        if not self._print_table(
+            ['Operation ID', 'Started at', 'Started by', 'Operation type', 'Object', 'Progress', 'Status'],
+            ops, fmt):
             print "No running operations"
 
     def Account_Users(self, args):
         """Print users in client account."""
         users = self.api.Account_Users(args)
-        res = [['Client ID', 'E-mail', 'Name']]
-        res.extend([[
-            self.client_id,
-            user['email'],
-            user['name']
-        ] for user in users])
-        self.p.print_table(res)
+        def fmt(user):
+            return [
+                self.api.client_id,
+                user['email'],
+                user['name']
+            ]
+
+        self._print_table(
+            ['Client ID', 'E-mail', 'Name'],
+            users, fmt)
 
     def OCI_Test(self, args):
         self.api.OCI_Test(args)
 
     def OCI_TemplateCategories(self, args):
         """Lists available template categories"""
-        ht = [['Template category ID', 'Name', 'Description']]
-        for cat in self.api.OCI_TemplateCategories(args):
+        cats = self.api.OCI_TemplateCategories(args)
+        def fmt(cat):
             tc_id = cat['id']
             if cat['parent_id'] is not None:
                 tc_id = '  ' + str(tc_id)
-            ht.append([tc_id, cat['name'], cat['description']])
-        self.p.print_table(ht)
+            return [tc_id, cat['name'], cat['description']]
+
+        self._print_table(
+            ['Template category ID', 'Name', 'Description'],
+            cats, fmt)
 
     def OCI_Templates(self, args, name_filter=''):
         """Lists templates in a category"""
@@ -113,10 +121,11 @@ class OktawaveCli(object):
     def OCI_List(self, args):
         """Lists client's virtual machines"""
         vms = self.api.OCI_List(args)
-        res = [['Virtual machine ID', 'Name', 'Class']]
-        for vm in vms:
-            res.append([vm['id'], vm['name'], vm['class_name']])
-        self.p.print_table(res)
+        def fmt(vm):
+            return [vm['id'], vm['name'], vm['class_name']]
+
+        self._print_table(
+            ['Virtual machine ID', 'Name', 'Class'], vms, fmt)
 
     def OCI_Restart(self, args):
         """Restarts given VM"""
@@ -137,15 +146,17 @@ class OktawaveCli(object):
     def OCI_Logs(self, args):
         """Shows virtual machine logs"""
         logs = self.api.OCI_Logs(args)
-        res = [['Time', 'Operation type', 'User', 'Status']]
-        for op in logs:
-            res.append([
+        def fmt(op):
+            return [
                 op['time'],
                 op['type'],
                 op['user_name'],
                 op['status'],
-            ])
-        self.p.print_table(res)
+            ]
+
+        self._print_table(
+            ['Time', 'Operation type', 'User', 'Status'],
+            logs, fmt)
 
     def OCI_Settings(self, args):
         """Shows basic VM settings (IP addresses, OS, names, autoscaling etc.)"""
@@ -171,26 +182,31 @@ class OktawaveCli(object):
         self.p._print('Basic VM settings and statistics')
         self.p.print_table(base_tab)
 
-        disks = [[
-            'Name',
-            'Capacity (GB)',
-            'Created at',
-            'Created by',
-            'Primary'
-        ]]
-        disks.extend([
-            [
-            disk['name'],
-            disk['capacity_gb'],
-            disk['creation_date'],
-            disk['creation_user_name'],
-            'Yes' if disk['is_primary'] else 'No'
-            ] for disk in settings['disks']
-        ])
+        def fmt_disk(disk):
+            return [
+                disk['capacity_gb'],
+                disk['creation_date'],
+                disk['creation_user_name'],
+                'Yes' if disk['is_primary'] else 'No'
+            ]
         self.p._print("Hard disks")
-        self.p.print_table(disks)
+        self._print_table(
+            ['Name', 'Capacity (GB)', 'Created at', 'Created by', 'Primary'],
+            settings['disks'], fmt_disk)
 
-        ips = [[
+        def fmt_ip(ip):
+            return [
+                ip['ipv4'],
+                ip['ipv6'],
+                ip['creation_date'],
+                ip['dhcp_branch'],
+                ip['gateway'],
+                ip['status'],
+                ip['last_change_date'],
+                ip['macaddr']
+            ]
+        self.p._print("IP addresses")
+        self._print_table([
             'IPv4 address',
             'IPv6 address',
             'Created at',
@@ -199,37 +215,20 @@ class OktawaveCli(object):
             'Status',
             'Last changed',
             'MAC address'
-        ]]
-        ips.extend([
-            [
-            ip['ipv4'],
-            ip['ipv6'],
-            ip['creation_date'],
-            ip['dhcp_branch'],
-            ip['gateway'],
-            ip['status'],
-            ip['last_change_date'],
-            ip['macaddr']
-            ] for ip in settings['ips']
-        ])
-        self.p._print("IP addresses")
-        self.p.print_table(ips)
+        ], settings['ips'], fmt_ip)
 
         if settings['vlans']:
-            vlans = [[
-                'IPv4 address',
-                'Created at',
-                'MAC address'
-            ]]
-            vlans.extend([
-                [
-                vlan['ipv4'],
-                vlan['creation_date'],
-                vlan['macaddr'],
-                ] for vlan in settings['vlans']
-            ])
             self.p._print("Private vlans")
-            self.p.print_table(vlans)
+            def fmt_vlan(vlan):
+                return [
+                    vlan['ipv4'],
+                    vlan['creation_date'],
+                    vlan['macaddr'],
+                ]
+
+            self._print_table(
+                ['IPv4 address', 'Created at', 'MAC address'],
+                settings['vlans'], fmt_vlan)
 
     def OCI_Create(self, args, forced_type='Machine', db_type=None):
         """Creates a new instance from template"""
@@ -302,16 +301,20 @@ class OktawaveCli(object):
     def OVS_List(self, args):
         """Lists disks"""
         disks = self.api.OVS_List(args)
-        disk = dict()
-        self.p.print_table([['ID', 'Name', 'Tier', 'Capacity', 'Used', 'Shared', 'VMs']] + [[
-            disk['id'],
-            disk['name'],
-            disk['tier'],
-            '%d GB' % disk['capacity_gb'],
-            '%d GB' % disk['used_gb'],
-            'Yes' if disk['is_shared'] else 'No',
-            ', '.join('%(id)d (%(name)s)' % vm for vm in disk['vms']) if disk['vms'] else 'None'
-        ] for disk in disks])
+        def fmt(disk):
+            return [
+                disk['id'],
+                disk['name'],
+                disk['tier'],
+                '%d GB' % disk['capacity_gb'],
+                '%d GB' % disk['used_gb'],
+                'Yes' if disk['is_shared'] else 'No',
+                ', '.join('%(id)d (%(name)s)' % vm for vm in disk['vms']) if disk['vms'] else 'None'
+            ]
+
+        self._print_table(
+            ['ID', 'Name', 'Tier', 'Capacity', 'Used', 'Shared', 'VMs'],
+            disks, fmt)
 
     def OVS_Delete(self, args):
         """Deletes a disk"""
