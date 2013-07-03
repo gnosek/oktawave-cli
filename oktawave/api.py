@@ -1,5 +1,6 @@
 from client import ApiClient
 from printer import Printer
+from exceptions import *
 from suds.sax.element import Element
 import sys
 import suds
@@ -83,12 +84,6 @@ DICT = {
     'OCI_AUTOSCALING_ID': 184,
     'OCI_CLASSES_DICT_ID': 12
 }
-
-class OktawaveLoginError(RuntimeError):
-    pass
-
-class OktawaveOCIClassNotFound(ValueError):
-    pass
 
 class OktawaveApi(object):
 
@@ -479,22 +474,30 @@ class OktawaveApi(object):
         dsp = self._search_params(self.clients.create('ns3:DisksSearchParams'))
         dsp.ClientId = self.client_id
         data = self.clients.call('GetDisks', dsp)
-        self.p.print_table([['ID', 'Name', 'Tier', 'Capacity', 'Used', 'Shared', 'VMs']] + [[
-            disk.ClientHddId,
-            disk.HddName,
-            self._dict_item_name(disk.HddStandard),
-            str(disk.CapacityGB) + " GB",
-            str(disk.UsedCapacityGB) + " GB",
-            "Yes" if disk.IsShared else "No",
-            "None" if disk.VirtualMachineHdds == None else ', '.join(
-            [str(hdd.VirtualMachine.VirtualMachineId) + " (" + hdd.VirtualMachine.VirtualMachineName + ")" for hdd in disk.VirtualMachineHdds[0]])
-        ] for disk in data._results[0]])
+        for disk in data._results[0]:
+            if disk.VirtualMachineHdds is None:
+                vms = []
+            else:
+                vms = [{
+                    'id': vm.VirtualMachine.VirtualMachineId,
+                    'name': vm.VirtualMachine.VirtualMachineName,
+                } for vm in disk.VirtualMachineHdds[0]]
+            yield {
+                'id': disk.ClientHddId,
+                'name': disk.HddName,
+                'tier': self._dict_item_name(disk.HddStandard),
+                'capacity_gb': disk.CapacityGB,
+                'used_gb': disk.UsedCapacityGB,
+                'is_shared': disk.IsShared,
+                'vms': vms,
+            }
 
     def OVS_Delete(self, args):
         """Deletes a disk"""
         self._logon(args)
         res = self.clients.call('DeleteDisk', args.id, self.client_id)
-        print "OK" if res else "ERROR: Disk cannot be deleted (is it mapped to any OCI instances?)."
+        if not res:
+            raise OktawaveOVSDeleteError()
 
     def OVS_Create(self, args):
         """Adds a disk"""
@@ -510,20 +513,19 @@ class OktawaveApi(object):
         disk.PaymentTypeId = 37
         disk.VirtualMachineIds = ''  # this seems to solve the empty-array error problem, but certainly is not nice
         self.clients.call('CreateDisk', disk, self.client_id)
-        print "OK"
 
     def OVS_Map(self, args):
         """Maps a disk into an instance"""
         self._logon(args)
         disk = self._find_disk(args.disk_id)
-        if disk == None:
-            print "ERROR: No such disk found"
-            return 1
+        if disk is None:
+            raise OktawaveOVSNotFoundError()
+
         vms = [
             vm.VirtualMachine.VirtualMachineId for vm in disk.VirtualMachineHdds[0]]
         if args.oci_id in vms:
-            print "ERROR: Disk is already mapped to this instance"
-            return 1
+            raise OktawaveOVSMappedError()
+
         disk_mod = self.clients.create('ns3:ClientHddWithVMIds')
         for attr in ['CapacityGB', 'ClientHddId', 'HddName', 'IsShared']:
             setattr(disk_mod, attr, getattr(disk, attr))
@@ -532,21 +534,21 @@ class OktawaveApi(object):
         disk_mod.VirtualMachineIds = self.clients.create('ns6:ArrayOfint')
         disk_mod.VirtualMachineIds[0].extend(vms + [args.oci_id])
         res = self.clients.call('UpdateDisk', disk_mod, self.client_id)
-        print "OK" if res else "ERROR: Disk cannot be mapped."
+        if not res:
+            raise OktawaveOVSMapError()
 
     def OVS_Unmap(self, args):
         """Unmaps a disk from an instance"""
         self._logon(args)
         disk = self._find_disk(args.disk_id)
-        if disk == None:
-            print "ERROR: No such disk found"
-            return 1
+        if disk is None:
+            raise OktawaveOVSNotFoundError()
+
         vms = [
             vm.VirtualMachine.VirtualMachineId for vm in disk.VirtualMachineHdds[0]]
-        if not args.oci_id in vms:
-            print "ERROR: Disk is not mapped to this instance"
-            return 1
-        print disk
+        if args.oci_id not in vms:
+            raise OktawaveOVSUnmappedError()
+
         disk_mod = self.clients.create('ns3:ClientHddWithVMIds')
         for attr in ['CapacityGB', 'ClientHddId', 'HddName', 'IsShared']:
             setattr(disk_mod, attr, getattr(disk, attr))
@@ -558,7 +560,8 @@ class OktawaveApi(object):
         if len(disk_mod.VirtualMachineIds[0]) == 0:
             disk_mod.VirtualMachineIds = ''
         res = self.clients.call('UpdateDisk', disk_mod, self.client_id)
-        print "OK" if res else "ERROR: Disk cannot be unmapped."
+        if not res:
+            raise OktawaveOVSUnmapError()
 
     # ORDB (databases) ###
 

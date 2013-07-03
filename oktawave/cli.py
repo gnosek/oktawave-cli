@@ -1,8 +1,5 @@
-from oktawave.api import (
-    OktawaveApi,
-    OktawaveLoginError,
-    OktawaveOCIClassNotFound,
-    )
+from oktawave.api import OktawaveApi
+from oktawave.exceptions import *
 import sys
 
 class OktawaveCli(OktawaveApi):
@@ -297,3 +294,54 @@ class OktawaveCli(OktawaveApi):
         sc.delete_container(args.container)
         print "OK"
 
+    def OVS_List(self, args):
+        """Lists disks"""
+        disks = super(OktawaveCli, self).OVS_List(args)
+        disk = dict()
+        self.p.print_table([['ID', 'Name', 'Tier', 'Capacity', 'Used', 'Shared', 'VMs']] + [[
+            disk['id'],
+            disk['name'],
+            disk['tier'],
+            '%d GB' % disk['capacity_gb'],
+            '%d GB' % disk['used_gb'],
+            'Yes' if disk['is_shared'] else 'No',
+            ', '.join('%(id)d (%(name)s)' % vm for vm in disk['vms']) if disk['vms'] else 'None'
+        ] for disk in disks])
+
+    def OVS_Delete(self, args):
+        """Deletes a disk"""
+        try:
+            super(OktawaveCli, self).OVS_Delete(args)
+        except OktawaveOVSDeleteError:
+            print "ERROR: Disk cannot be deleted (is it mapped to any OCI instances?)."
+        else:
+            print "OK"
+
+    def OVS_Create(self, args):
+        """Adds a disk"""
+        super(OktawaveCli, self).OVS_Create(args)
+        print "OK"
+
+    def OVS_Map(self, args):
+        """Maps a disk into an instance"""
+        try:
+            super(OktawaveCli, self).OVS_Map(args)
+        except OktawaveOVSMappedError:
+            print "ERROR: Disk is already mapped to this instance"
+            return 1
+        except OktawaveOVSMapError:
+            print "ERROR: Disk cannot be mapped."
+        else:
+            print "OK"
+
+    def OVS_Unmap(self, args):
+        """Unmaps a disk from an instance"""
+        try:
+            super(OktawaveCli, self).OVS_Unmap(args)
+        except OktawaveOVSUnmappedError:
+            print "ERROR: Disk is not mapped to this instance"
+            return 1
+        except OktawaveOVSUnmapError:
+            print "ERROR: Disk cannot be unmapped."
+        else:
+            print "OK"
