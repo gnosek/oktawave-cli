@@ -86,14 +86,13 @@ DICT = {
 
 class OktawaveApi(object):
 
-    def __init__(self, args, output=sys.stdout):
+    def __init__(self, debug=False):
         """Initialize the API instance
 
         Arguments:
-        - args - reserved for future use
-        - output - stream to which the results should be printed
+        - debug (bool) - enable debug output?
         """
-        self.debug = args.debug
+        self.debug = debug
 
     # HELPER METHODS ###
     # methods starting with "_" will not be autodispatched to client commands
