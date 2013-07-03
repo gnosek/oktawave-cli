@@ -8,10 +8,8 @@ class OktawaveCli(object):
     def __init__(self, args, output=sys.stdout):
         self.p = Printer(output)
         self.api = OktawaveApi(debug=args.debug)
-
-    def _logon(self, args, only_common=False):
         try:
-            return self.api._logon(args, only_common)
+            self.api._logon(args, False)
         except OktawaveLoginError:
             print "ERROR: Couldn't login to Oktawave."
             sys.exit(1)
