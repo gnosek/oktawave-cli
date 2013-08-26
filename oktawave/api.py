@@ -8,7 +8,6 @@ try:
 except ImportError:
     from swift.common.client import Connection
 import itertools
-import socket
 
 
 # Patching some stuff in suds to get it working with SOAP 1.2
@@ -175,11 +174,7 @@ class OktawaveApi(object):
         return res
 
     def _get_machine_ip(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.connect(("8.8.8.8", 53))
-        res = s.getsockname()[0]
-        s.close()
-        return res
+        return '127.0.0.1'
 
     def _oci_class_id(self, class_name):
         """Returns ID of an OCI class with a given name"""
