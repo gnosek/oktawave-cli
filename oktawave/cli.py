@@ -70,11 +70,11 @@ class OktawaveCli(object):
             users, fmt)
 
     def OCI_Test(self, args):
-        self.api.OCI_Test(args)
+        self.api.OCI_Test()
 
     def OCI_TemplateCategories(self, args):
         """Lists available template categories"""
-        cats = self.api.OCI_TemplateCategories(args)
+        cats = self.api.OCI_TemplateCategories()
         def fmt(cat):
             tc_id = cat['id']
             if cat['parent_id'] is not None:
@@ -87,7 +87,7 @@ class OktawaveCli(object):
 
     def OCI_Templates(self, args, name_filter=''):
         """Lists templates in a category"""
-        templates = self.api.OCI_Templates(args, name_filter)
+        templates = self.api.OCI_Templates(args.id, name_filter)
         if templates:
             res = dict((k, [v]) for k, v in templates.items())
             self.p.print_hash_table(res, ['Template ID', 'Template name'])
@@ -96,7 +96,7 @@ class OktawaveCli(object):
 
     def OCI_TemplateInfo(self, args):
         """Shows more detailed info about a particular template"""
-        ti = self.api.OCI_TemplateInfo(args)
+        ti = self.api.OCI_TemplateInfo(args.id)
 
         def _hdd_label(hdd):
             if hdd['is_primary']:
@@ -122,7 +122,7 @@ class OktawaveCli(object):
 
     def OCI_List(self, args):
         """Lists client's virtual machines"""
-        vms = self.api.OCI_List(args)
+        vms = self.api.OCI_List()
         def fmt(vm):
             return [vm['id'], vm['name'], vm['class_name']]
 
@@ -131,23 +131,23 @@ class OktawaveCli(object):
 
     def OCI_Restart(self, args):
         """Restarts given VM"""
-        self.api.OCI_Restart(args)
+        self.api.OCI_Restart(args.id)
 
     def OCI_TurnOff(self, args):
         """Turns given VM off"""
-        self.api.OCI_TurnOff(args)
+        self.api.OCI_TurnOff(args.id)
 
     def OCI_TurnOn(self, args):
         """Turns given virtual machine on"""
-        self.api.OCI_TurnOn(args)
+        self.api.OCI_TurnOn(args.id)
 
     def OCI_Delete(self, args):
         """Deletes given virtual machine"""
-        self.api.OCI_Delete(args)
+        self.api.OCI_Delete(args.id)
 
     def OCI_Logs(self, args):
         """Shows virtual machine logs"""
-        logs = self.api.OCI_Logs(args)
+        logs = self.api.OCI_Logs(args.id)
         def fmt(op):
             return [
                 op['time'],
@@ -162,7 +162,7 @@ class OktawaveCli(object):
 
     def OCI_Settings(self, args):
         """Shows basic VM settings (IP addresses, OS, names, autoscaling etc.)"""
-        settings = self.api.OCI_Settings(args)
+        settings = self.api.OCI_Settings(args.id)
 
         base_tab = [['Key', 'Value']]
         base_tab.extend([
@@ -235,13 +235,13 @@ class OktawaveCli(object):
     def OCI_Create(self, args, forced_type='Machine', db_type=None):
         """Creates a new instance from template"""
         try:
-            self.api.OCI_Create(args, forced_type, db_type)
+            self.api.OCI_Create(args.name, args.template, args.oci_class, forced_type, db_type)
         except OktawaveOCIClassNotFound:
             print "OCI class not found"
 
     def OCI_Clone(self, args):
         """Clones a VM"""
-        self.api.OCI_Clone(args)
+        self.api.OCI_Clone(args.id, args.name, args.clonetype)
 
     def OCS_ListContainers(self, args):
         """Lists containers"""
@@ -358,7 +358,7 @@ class OktawaveCli(object):
 
     def ORDB_List(self, args):
         """Lists databases"""
-        dbs = self.api.ORDB_List(args)
+        dbs = self.api.ORDB_List()
         def fmt(db):
             return [
                 db['id'],
@@ -373,15 +373,15 @@ class OktawaveCli(object):
 
     def ORDB_TurnOn(self, args):
         """Turns a database on"""
-        self.api.ORDB_TurnOn(args)
+        self.api.ORDB_TurnOn(args.id)
 
     def ORDB_TurnOff(self, args):
         """Turns a database off"""
-        self.api.ORDB_TurnOff(args)
+        self.api.ORDB_TurnOff(args.id)
 
     def ORDB_Restart(self, args):
         """Restarts a database"""
-        self.api.ORDB_Restart(args)
+        self.api.ORDB_Restart(args.id)
 
     def ORDB_Clone(self, args):
         """Clones a database VM"""
@@ -389,15 +389,15 @@ class OktawaveCli(object):
 
     def ORDB_Delete(self, args):
         """Deletes a database or VM"""
-        self.api.ORDB_Delete(args)
+        self.api.ORDB_Delete(args.id, args.db_name)
 
     def ORDB_Logs(self, args):
         """Shows database VM logs"""
-        self.OCI_Logs(args)
+        self.OCI_Logs()
 
     def ORDB_LogicalDatabases(self, args):
         """Shows logical databases"""
-        dbs = self.api.ORDB_LogicalDatabases(args)
+        dbs = self.api.ORDB_LogicalDatabases(args.id)
         def fmt(db):
             return [
                 db['id'],
@@ -419,14 +419,14 @@ class OktawaveCli(object):
     def ORDB_Create(self, args):
         """Creates a database VM"""
         try:
-            self.api.ORDB_Create(args)
+            self.api.ORDB_Create(args.name, args.template, args.oci_class)
         except OktawaveORDBInvalidTemplateError:
             print "ERROR: Selected template is not a database template"
             return 1
 
     def ORDB_GlobalSettings(self, args):
         """Shows global database engine settings"""
-        settings = self.api.ORDB_GlobalSettings(args)
+        settings = self.api.ORDB_GlobalSettings(args.id)
         def fmt(item):
             return [item['name'], item['value']]
         self._print_table(['Name', 'Value'], settings, fmt)
@@ -446,22 +446,22 @@ class OktawaveCli(object):
 
     def ORDB_CreateLogicalDatabase(self, args):
         """Creates a new logical database within an instance"""
-        self.api.ORDB_CreateLogicalDatabase(args)
+        self.api.ORDB_CreateLogicalDatabase(args.id, args.name, args.encoding)
         print "OK"
 
     def ORDB_BackupLogicalDatabase(self, args):
         """Creates a backup of logical database"""
-        self.api.ORDB_BackupLogicalDatabase(args)
+        self.api.ORDB_BackupLogicalDatabase(args.id, args.name)
         print "OK"
 
     def ORDB_MoveLogicalDatabase(self, args):
         """Moves a logical database"""
-        self.api.ORDB_MoveLogicalDatabase(args)
+        self.api.ORDB_MoveLogicalDatabase(args.id_from, args.id_to, args.name)
         print "OK"
 
     def ORDB_Backups(self, args):
         """Lists logical database backups"""
-        backups = self.api.ORDB_Backups(args)
+        backups = self.api.ORDB_Backups()
         def fmt(b):
             return [b['file_name'], b['type'], b['path']]
 
@@ -471,5 +471,5 @@ class OktawaveCli(object):
 
     def ORDB_RestoreLogicalDatabase(self, args):
         """Restores a database from backup"""
-        self.api.ORDB_RestoreLogicalDatabase(args)
+        self.api.ORDB_RestoreLogicalDatabase(args.id, args.name, args.backup_file)
         print "OK"

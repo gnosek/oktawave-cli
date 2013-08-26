@@ -143,10 +143,10 @@ class OktawaveApi(object):
     def _dict_item_name(self, data, sep=', ', field='ItemName'):
         return self._dict_names(data.DictionaryItemNames[0], field)[0]
 
-    def _simple_vm_method(self, method, args):
+    def _simple_vm_method(self, method, vm_id):
         """Wraps around common simple virtual machine method call pattern"""
         self._logon()
-        self.clients.call(method, args.id, self.client_id)
+        self.clients.call(method, vm_id, self.client_id)
 
     def _ocs_prepare(self, args):
         """Wrapper method for OCS/swift API initialization"""
@@ -245,11 +245,11 @@ class OktawaveApi(object):
 
     # OCI (VMs) ###
 
-    def OCI_Test(self, args):
+    def OCI_Test(self):
         self._logon()
         self._d(self._oci_class_id('Large'))
 
-    def OCI_TemplateCategories(self, args):
+    def OCI_TemplateCategories(self):
         """Lists available template categories"""
         self._logon()
         data = self.common.call('GetTemplateCategories', self.client_id)
@@ -271,19 +271,19 @@ class OktawaveApi(object):
                 for tcc in tc.CategoryChildren[0]:
                     yield _tc_info(tcc, tc.TemplateCategoryId)
 
-    def OCI_Templates(self, args, name_filter=''):
+    def OCI_Templates(self, category_id, name_filter=''):
         """Lists templates in a category"""
         self._logon()
         data = self.common.call(
-            'GetTemplatesByCategory', args.id, None, None, self.client_id)
+            'GetTemplatesByCategory', category_id, None, None, self.client_id)
         if data:
             return dict((template.TemplateId, template.TemplateName)
                        for template in data[0] if name_filter in template.TemplateName)
 
-    def OCI_TemplateInfo(self, args):
+    def OCI_TemplateInfo(self, template_id):
         """Shows more detailed info about a particular template"""
         self._logon()
-        data = self.clients.call('GetTemplate', args.id, self.client_id)
+        data = self.clients.call('GetTemplate', template_id, self.client_id)
 
         template_category = '/'.join(self._dict_names(
             data.TemplateCategory.TemplateCategoryNames[0], field='CategoryName'))
@@ -311,7 +311,7 @@ class OktawaveApi(object):
             'description': data.Description
         }
 
-    def OCI_List(self, args):
+    def OCI_List(self):
         """Lists client's virtual machines"""
         self._logon()
         sp = self._search_params(
@@ -326,28 +326,28 @@ class OktawaveApi(object):
                 'class_name': self._dict_item_name(vm.VMClass)
             }
 
-    def OCI_Restart(self, args):
+    def OCI_Restart(self, oci_id):
         """Restarts given VM"""
-        self._simple_vm_method('RestartVirtualMachine', args)
+        self._simple_vm_method('RestartVirtualMachine', oci_id)
 
-    def OCI_TurnOff(self, args):
+    def OCI_TurnOff(self, oci_id):
         """Turns given VM off"""
-        self._simple_vm_method('TurnoffVirtualMachine', args)
+        self._simple_vm_method('TurnoffVirtualMachine', oci_id)
 
-    def OCI_TurnOn(self, args):
+    def OCI_TurnOn(self, oci_id):
         """Turns given virtual machine on"""
-        self._simple_vm_method('TurnOnVirtualMachine', args)
+        self._simple_vm_method('TurnOnVirtualMachine', oci_id)
 
-    def OCI_Delete(self, args):
+    def OCI_Delete(self, oci_id):
         """Deletes given virtual machine"""
-        self._simple_vm_method('DeleteVirtualMachine', args)
+        self._simple_vm_method('DeleteVirtualMachine', oci_id)
 
-    def OCI_Logs(self, args):
+    def OCI_Logs(self, oci_id):
         """Shows virtual machine logs"""
         self._logon()
         sp = self._search_params(
             self.clients.create('ns3:VirtualMachineHistoriesSearchParams'))
-        sp.VirtualMachineId = args.id
+        sp.VirtualMachineId = oci_id
         sp.PageSize = 100
         sp.SortingDirection = 'Descending'
         data = self.clients.call(
@@ -361,11 +361,11 @@ class OktawaveApi(object):
                 'status': self._dict_item_name(op.Status)
             }
 
-    def OCI_Settings(self, args):
+    def OCI_Settings(self, oci_id):
         """Shows basic VM settings (IP addresses, OS, names, autoscaling etc.)"""
         self._logon()
         data = self.clients.call(
-            'GetVirtualMachineById', args.id, self.client_id)
+            'GetVirtualMachineById', oci_id, self.client_id)
 
         res = {
             'autoscaling': self._dict_item_name(data.AutoScalingType),
@@ -410,21 +410,21 @@ class OktawaveApi(object):
 
         return res
 
-    def OCI_Create(self, args, forced_type='Machine', db_type=None):
+    def OCI_Create(self, name, template, oci_class=None, forced_type='Machine', db_type=None):
         """Creates a new instance from template"""
         self._logon()
         template = self.clients.call(
-            'GetTemplate', args.template, self.client_id)
+            'GetTemplate', template, self.client_id)
         oci_class_id = None
-        if args.oci_class:
-            oci_class_id = self._oci_class_id(args.oci_class)
+        if oci_class:
+            oci_class_id = self._oci_class_id(oci_class)
             if not oci_class_id:
                 raise OktawaveOCIClassNotFound()
         self.clients.call('CreateVirtualMachine',
-                          args.template,
+                          template,
                           None,
                           None,
-                          args.name,
+                          name,
                           oci_class_id,
                           None,
                           DICT['OCI_PAYMENT_ID'],
@@ -437,11 +437,11 @@ class OktawaveApi(object):
                           DICT['OCI_AUTOSCALING_ID']
                           )
 
-    def OCI_Clone(self, args):
+    def OCI_Clone(self, oci_id, name, clonetype):
         """Clones a VM"""
         self._logon()
         self.clients.call(
-            'CloneVirtualMachine', args.id, args.name, args.clonetype, self.client_id)
+            'CloneVirtualMachine', oci_id, name, clonetype, self.client_id)
 
     # OVS (disks) ###
 
@@ -542,7 +542,7 @@ class OktawaveApi(object):
 
     # ORDB (databases) ###
 
-    def ORDB_List(self, args):
+    def ORDB_List(self):
         """Lists databases"""
         self._logon()
         sp = self._search_params(
@@ -560,32 +560,32 @@ class OktawaveApi(object):
                 'available_space': db.AvailableSpace,
             }
 
-    def ORDB_TurnOn(self, args):
+    def ORDB_TurnOn(self, oci_id):
         """Turns a database on"""
-        self._simple_vm_method('TurnOnVirtualMachine', args)
+        self._simple_vm_method('TurnOnVirtualMachine', oci_id)
 
-    def ORDB_TurnOff(self, args):
+    def ORDB_TurnOff(self, oci_id):
         """Turns a database off"""
-        self._simple_vm_method('TurnoffVirtualMachine', args)
+        self._simple_vm_method('TurnoffVirtualMachine', oci_id)
 
-    def ORDB_Restart(self, args):
+    def ORDB_Restart(self, oci_id):
         """Restarts a database"""
-        self._simple_vm_method('RestartVirtualMachine', args)
+        self._simple_vm_method('RestartVirtualMachine', oci_id)
 
     ORDB_Clone = OCI_Clone
 
-    def ORDB_Delete(self, args):
+    def ORDB_Delete(self, oci_id, db_name=None):
         """Deletes a database or VM"""
         self._logon()
-        if args.db_name == None:
-            self._simple_vm_method('DeleteVirtualMachine', args)
+        if db_name is None:
+            self._simple_vm_method('DeleteVirtualMachine', oci_id)
         else:
             self.clients.call(
-                'DeleteDatabase', args.id, args.db_name, self.client_id)
+                'DeleteDatabase', oci_id, db_name, self.client_id)
 
     ORDB_Logs = OCI_Logs
 
-    def ORDB_LogicalDatabases(self, args):
+    def ORDB_LogicalDatabases(self, oci_id):
         """Shows logical databases"""
         self._logon()
         sp = self._search_params(
@@ -596,7 +596,7 @@ class OktawaveApi(object):
             return
 
         for vm in data._results[0]:
-            if args.id is not None and str(vm.VirtualMachineId) != str(args.id):
+            if oci_id is not None and str(vm.VirtualMachineId) != str(oci_id):
                 continue
 
             for db in vm.Databases[0]:
@@ -612,19 +612,19 @@ class OktawaveApi(object):
 
     ORDB_Settings = OCI_Settings
 
-    def ORDB_Create(self, args):
+    def ORDB_Create(self, name, template, oci_class=None):
         """Creates a database VM"""
         self._logon()
-        data = self.clients.call('GetTemplate', args.template, self.client_id)
+        data = self.clients.call('GetTemplate', template, self.client_id)
         if str(data.TemplateType.DictionaryItemId) != str(DICT['DB_VM_CATEGORY']):
             raise OktawaveORDBInvalidTemplateError()
-        self.OCI_Create(args,
+        self.OCI_Create(name, template,
                         forced_type='Database', db_type=data.DatabaseType.DictionaryItemId)
 
-    def ORDB_GlobalSettings(self, args):
+    def ORDB_GlobalSettings(self, oci_id):
         """Shows global database engine settings"""
         self._logon()
-        data = self.clients.call('GetDatabaseConfig', args.id, self.client_id)
+        data = self.clients.call('GetDatabaseConfig', oci_id, self.client_id)
         if not data:
             return
 
@@ -634,24 +634,24 @@ class OktawaveApi(object):
                 'value': item.Value
             }
 
-    def ORDB_CreateLogicalDatabase(self, args):
+    def ORDB_CreateLogicalDatabase(self, oci_id, name, encoding):
         """Creates a new logical database within an instance"""
         self._logon()
-        self.clients.call('CreateDatabase', args.id, args.name, DICT[
-                          args.encoding.upper() + '_ENCODING'], self.client_id)
+        self.clients.call('CreateDatabase', oci_id, name, DICT[
+                          encoding.upper() + '_ENCODING'], self.client_id)
 
-    def ORDB_BackupLogicalDatabase(self, args):
+    def ORDB_BackupLogicalDatabase(self, oci_id, name):
         """Creates a backup of logical database"""
         self._logon()
-        self.clients.call('BackupDatabase', args.id, args.name, self.client_id)
+        self.clients.call('BackupDatabase', oci_id, name, self.client_id)
 
-    def ORDB_MoveLogicalDatabase(self, args):
+    def ORDB_MoveLogicalDatabase(self, oci_id_from, oci_id_to, name):
         """Moves a logical database"""
         self._logon()
         self.clients.call(
-            'MoveDatabase', args.id_from, args.id_to, args.name, self.client_id)
+            'MoveDatabase', oci_id_from, oci_id_to, name, self.client_id)
 
-    def ORDB_Backups(self, args):
+    def ORDB_Backups(self):
         """Lists logical database backups"""
         self._logon()
         mysql_data = self.clients.call(
@@ -675,8 +675,8 @@ class OktawaveApi(object):
                     "/" + b._x003C_FullPath_x003E_k__BackingField
             }
 
-    def ORDB_RestoreLogicalDatabase(self, args):
+    def ORDB_RestoreLogicalDatabase(self, oci_id, name, backup_file):
         """Restores a database from backup"""
         self._logon()
-        self.clients.call('RestoreDatabase', args.id,
-                          args.name, args.backup_file, self.client_id)
+        self.clients.call('RestoreDatabase', oci_id,
+                          name, backup_file, self.client_id)
