@@ -7,10 +7,13 @@ class OktawaveCli(object):
 
     def __init__(self, args, debug=False, output=sys.stdout):
         self.p = Printer(output)
-        self.api = OktawaveApi(debug=debug)
+        self.api = OktawaveApi(
+            username=args.username, password=args.password,
+            ocs_username=args.ocs_username, ocs_password=args.ocs_password,
+            debug=debug)
         self.args = args
         try:
-            self.api._logon(args, False)
+            self.api._logon(only_common=False)
         except OktawaveLoginError:
             print "ERROR: Couldn't login to Oktawave."
             sys.exit(1)
