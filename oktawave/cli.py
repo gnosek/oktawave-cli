@@ -5,9 +5,10 @@ import sys
 
 class OktawaveCli(object):
 
-    def __init__(self, args, output=sys.stdout):
+    def __init__(self, args, debug=False, output=sys.stdout):
         self.p = Printer(output)
-        self.api = OktawaveApi(debug=args.debug)
+        self.api = OktawaveApi(debug=debug)
+        self.args = args
         try:
             self.api._logon(args, False)
         except OktawaveLoginError:

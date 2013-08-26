@@ -268,8 +268,7 @@ if(__name__ == '__main__'):
 	if args.interactive:
 		print "This is Oktawave CLI, version " + VERSION + '.'
 		print "Logging in to Oktawave..."
-		api = OktawaveCli(args)
-		api._logon(args)
+		api = OktawaveCli(args, debug=args.debug)
 		print "Successfully logged in as " + args.username + '.'
 		print 'Type a command, or "help" to get help.'
 		readline.parse_and_bind('tab: complete')
@@ -306,7 +305,7 @@ if(__name__ == '__main__'):
 				continue
 		sys.exit(1)
 	# non-interactive mode - just execute the command
-	api = OktawaveCli(args)
+	api = OktawaveCli(args, debug=args.debug)
 	method = getattr(api, args.namespace + '_' + args.command)
 	res = method(args)
 	if res != None:
