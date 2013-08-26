@@ -241,6 +241,10 @@ class OktawaveCli(object):
         except OktawaveOCIClassNotFound:
             print "OCI class not found"
 
+    def OCI_ChangeClass(self, args):
+        """Changes running VM class"""
+        self.api.OCI_ChangeClass(args.id, args.oci_class)
+
     def OCI_Clone(self, args):
         """Clones a VM"""
         self.api.OCI_Clone(args.id, args.name, args.clonetype)

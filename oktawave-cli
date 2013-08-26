@@ -95,6 +95,10 @@ if(__name__ == '__main__'):
 			['name', 'VM name'],
 			['oci_class', 'OCI class name, for example "Small" or "Extreme". If not specified, the minimal class for the template is used.', {'nargs' : '?'}]
 		]],
+		['ChangeClass', 'Change running VM class', [
+			['id', 'Existing virtual machine ID, as returned by "OCI List"', {'type' : int}],
+			['oci_class', 'OCI class name, for example "Small" or "Extreme".']
+		]],
 		['Clone', 'Clone a virtual machine', [
 			['id', 'Existing virtual machine ID, as returned by "OCI List"', {'type' : int}],
 			['name', 'Clone name'],

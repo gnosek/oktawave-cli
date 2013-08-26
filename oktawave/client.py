@@ -2,6 +2,7 @@ from suds.client import Client
 from suds.xsd.doctor import Import, ImportDoctor
 import suds
 import sys
+import oktawave.suds_monkeypatch
 
 # wrapper over suds.Client
 

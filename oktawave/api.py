@@ -391,6 +391,22 @@ class OktawaveApi(object):
 
         return res
 
+    def OCI_ChangeClass(self, oci_id, oci_class, at_midnight=False):
+        """Changes running VM class, potentially rebooting it"""
+        self._logon()
+        oci = self.clients.call(
+            'GetVirtualMachineById', oci_id, self.client_id)
+        oci_class_id = self._oci_class_id(oci_class)
+        if not oci_class_id:
+            raise OktawaveOCIClassNotFound()
+        oci.VMClass = self.common.call('GetDictionaryItemById', oci_class_id)
+        self._d(oci)
+        del(oci._Id)
+        if not oci.PrivateIpv4:
+            oci.PrivateIpv4 = ""
+        self.clients.call(
+            'UpdateVirtualMachine', oci, self.client_id, at_midnight)
+
     def OCI_Create(self, name, template, oci_class=None, forced_type='Machine', db_type=None):
         """Creates a new instance from template"""
         self._logon()
