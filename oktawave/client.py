@@ -13,6 +13,8 @@ class ApiClient:
         schema_doctor = ImportDoctor(*schema_imports)
         self.client = Client(username='API\\' + username,
                              password=password, url=wsdl, doctor=schema_doctor)
+        self.client.options.headers.update(**{'Content-Type':
+                 'application/soap+xml; charset=utf-8'})
         self.hc = headersCreator
         self.debug = debug
 

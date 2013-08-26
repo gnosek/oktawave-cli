@@ -16,24 +16,6 @@ suds.bindings.binding.envns = (
     'SOAP-ENV', 'http://www.w3.org/2003/05/soap-envelope')
 
 
-class SudsClientPatched(suds.client.SoapClient):
-
-    def headers(self):
-        """
-        Get http headers or the http/https request.
-        @return: A dictionary of header/values.
-        @rtype: dict
-        """
-        action = self.method.soap.action
-        if isinstance(action, unicode):
-            action = action.encode('utf-8')
-        stock = {'Content-Type':
-                 'application/soap+xml; charset=utf-8', 'SOAPAction': action}
-        result = dict(stock, **self.options.headers)
-        suds.client.log.debug('headers = %s', result)
-        return result
-suds.client.SoapClient = SudsClientPatched
-
 # WSDL addresses
 wsdl_common = 'https://api.oktawave.com/CommonService.svc?wsdl'
 wsdl_clients = 'https://api.oktawave.com/ClientsService.svc?wsdl'
