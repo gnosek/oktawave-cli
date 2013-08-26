@@ -194,7 +194,7 @@ class OktawaveApi(object):
 
     # General / Account ###
 
-    def Account_Settings(self, args):
+    def Account_Settings(self):
         """Print basic settings of the client account
 
         args is an object containing at least the following fields:
@@ -215,7 +215,7 @@ class OktawaveApi(object):
             '24h_clock': client._x003C_Is24HourClock_x003E_k__BackingField,
         }
 
-    def Account_RunningJobs(self, args):
+    def Account_RunningJobs(self):
         self._logon()
         res = self.common.call('GetRunningOperations', self.client_id)
         if str(res) == '':
@@ -232,7 +232,7 @@ class OktawaveApi(object):
                 'status': self._dict_item_name(op.Status)
             }
 
-    def Account_Users(self, args):
+    def Account_Users(self):
         """Print users in client account."""
         self._logon()
         users = self.clients.call('GetClientUsers', self.client_id)

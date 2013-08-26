@@ -26,7 +26,7 @@ class OktawaveCli(object):
         return False
 
     def Account_Settings(self, args):
-        res = self.api.Account_Settings(args)
+        res = self.api.Account_Settings()
         tab = [
             ['Key', 'Value'],
             ['Time zone', res['time_zone']],
@@ -39,7 +39,7 @@ class OktawaveCli(object):
         self.p.print_table(tab)
 
     def Account_RunningJobs(self, args):
-        ops = self.api.Account_RunningJobs(args)
+        ops = self.api.Account_RunningJobs()
         def fmt(op):
             return [
                 op['id'],
@@ -57,7 +57,7 @@ class OktawaveCli(object):
 
     def Account_Users(self, args):
         """Print users in client account."""
-        users = self.api.Account_Users(args)
+        users = self.api.Account_Users()
         def fmt(user):
             return [
                 self.api.client_id,
