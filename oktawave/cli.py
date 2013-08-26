@@ -187,6 +187,7 @@ class OktawaveCli(object):
 
         def fmt_disk(disk):
             return [
+                disk['name'],
                 disk['capacity_gb'],
                 disk['creation_date'],
                 disk['creation_user_name'],
