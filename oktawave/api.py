@@ -148,20 +148,12 @@ class OktawaveApi(object):
         self._logon()
         self.clients.call(method, vm_id, self.client_id)
 
-    def _ocs_prepare(self, args):
+    def _ocs_prepare(self):
         """Wrapper method for OCS/swift API initialization"""
         # swift_username = self._logon(args, only_common =
         # True)._x003C_Client_x003E_k__BackingField.VmwareFriendlyName
-        sc = Connection(
-            'https://ocs-pl.oktawave.com/auth/v1.0', args.ocs_username, args.ocs_password)
-        if hasattr(args, 'path'):
-            if args.path == None:
-                (c, x, p) = args.container.partition('/')
-                args.container = c
-                if p != '':
-                    args.path = p
-
-        return sc
+        return Connection(
+            'https://ocs-pl.oktawave.com/auth/v1.0', self.ocs_username, self.ocs_password)
 
     def _find_disk(self, disk_id):
         """Finds a disk (OVS) by id"""

@@ -243,9 +243,18 @@ class OktawaveCli(object):
         """Clones a VM"""
         self.api.OCI_Clone(args.id, args.name, args.clonetype)
 
+    def _ocs_split_params(self, args):
+        container = args.container
+        path = args.path
+        if path is None:
+            container, _slash, path = container.partition('/')
+            if path == '':
+                path = None
+        return container, path
+
     def OCS_ListContainers(self, args):
         """Lists containers"""
-        sc = self.api._ocs_prepare(args)
+        sc = self.api._ocs_prepare()
         headers, containers = sc.get_account()
         self.p.print_hash_table(
             dict((o['name'], [o['count'], o['bytes']]) for o in containers),
@@ -254,50 +263,57 @@ class OktawaveCli(object):
 
     def OCS_Get(self, args):
         """Gets an object or file"""
-        sc = self.api._ocs_prepare(args)
-        if args.path == None:
-            self.p.print_swift_container(sc.get_container(args.container))
+        sc = self.api._ocs_prepare()
+        container, path = self._ocs_split_params(args)
+        if path is None:
+            self.p.print_swift_container(sc.get_container(container))
         else:
             self.p.print_swift_file(
-                sc.get_object(args.container, args.path))
+                sc.get_object(container, path))
 
     def OCS_List(self, args):
         """Lists content of a directory or container"""
-        sc = self.api._ocs_prepare(args)
+        sc = self.api._ocs_prepare()
+        container, path = self._ocs_split_params(args)
         obj = sc.get_container(
-            args.container)  # TODO: perhaps we can optimize it not to download the whole container when not necessary
-        self.p.list_swift_objects(obj, args.path, cname=args.container)
+            container)  # TODO: perhaps we can optimize it not to download the whole container when not necessary
+        self.p.list_swift_objects(obj, path, cname=container)
 
     def OCS_CreateContainer(self, args):
         """Creates a new container"""
-        sc = self.api._ocs_prepare(args)
-        sc.put_container(args.name)
+        sc = self.api._ocs_prepare()
+        container, path = self._ocs_split_params(args)
+        sc.put_container(name)
         print "OK"
 
     def OCS_CreateDirectory(self, args):
         """Creates a new directory within a container"""
-        sc = self.api._ocs_prepare(args)
+        sc = self.api._ocs_prepare()
+        container, path = self._ocs_split_params(args)
         sc.put_object(
-            args.container, args.path, None, content_type='application/directory')
+            container, path, None, content_type='application/directory')
         print "OK"
 
     def OCS_Put(self, args):
         """Uploads a file to the server"""
-        sc = self.api._ocs_prepare(args)
-        fh = open(args.local_path, 'r')
-        sc.put_object(args.container, args.path, fh)
+        sc = self.api._ocs_prepare()
+        container, path = self._ocs_split_params(args)
+        fh = open(local_path, 'r')
+        sc.put_object(container, path, fh)
         print "OK"
 
     def OCS_Delete(self, args):
         """Deletes an object from a container"""
-        sc = self.api._ocs_prepare(args)
-        sc.delete_object(args.container, args.path)
+        sc = self.api._ocs_prepare()
+        container, path = self._ocs_split_params(args)
+        sc.delete_object(container, path)
         print "OK"
 
     def OCS_DeleteContainer(self, args):
         """Deletes a whole container"""
-        sc = self.api._ocs_prepare(args)
-        sc.delete_container(args.container)
+        sc = self.api._ocs_prepare()
+        container, path = self._ocs_split_params(args)
+        sc.delete_container(container)
         print "OK"
 
     def OVS_List(self, args):
