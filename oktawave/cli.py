@@ -1,4 +1,4 @@
-from oktawave.api import OktawaveApi, DICT as OktawaveConstants
+from oktawave.api import OktawaveApi, OCSConnection, DICT as OktawaveConstants
 from oktawave.exceptions import *
 from oktawave.printer import Printer
 import sys
@@ -9,8 +9,9 @@ class OktawaveCli(object):
         self.p = Printer(output)
         self.api = OktawaveApi(
             username=args.username, password=args.password,
-            ocs_username=args.ocs_username, ocs_password=args.ocs_password,
             debug=debug)
+        self.ocs = OCSConnection(
+            username=args.ocs_username, password=args.ocs_password)
         self.args = args
         try:
             self.api._logon(only_common=False)
@@ -254,8 +255,7 @@ class OktawaveCli(object):
 
     def OCS_ListContainers(self, args):
         """Lists containers"""
-        sc = self.api._ocs_prepare()
-        headers, containers = sc.get_account()
+        headers, containers = self.ocs.get_account()
         self.p.print_hash_table(
             dict((o['name'], [o['count'], o['bytes']]) for o in containers),
             ['Container name', 'Objects count', 'Size in bytes']
@@ -263,57 +263,50 @@ class OktawaveCli(object):
 
     def OCS_Get(self, args):
         """Gets an object or file"""
-        sc = self.api._ocs_prepare()
         container, path = self._ocs_split_params(args)
         if path is None:
-            self.p.print_swift_container(sc.get_container(container))
+            self.p.print_swift_container(self.ocs.get_container(container))
         else:
             self.p.print_swift_file(
-                sc.get_object(container, path))
+                self.ocs.get_object(container, path))
 
     def OCS_List(self, args):
         """Lists content of a directory or container"""
-        sc = self.api._ocs_prepare()
         container, path = self._ocs_split_params(args)
-        obj = sc.get_container(
+        obj = self.ocs.get_container(
             container)  # TODO: perhaps we can optimize it not to download the whole container when not necessary
         self.p.list_swift_objects(obj, path, cname=container)
 
     def OCS_CreateContainer(self, args):
         """Creates a new container"""
-        sc = self.api._ocs_prepare()
         container, path = self._ocs_split_params(args)
-        sc.put_container(name)
+        self.ocs.put_container(name)
         print "OK"
 
     def OCS_CreateDirectory(self, args):
         """Creates a new directory within a container"""
-        sc = self.api._ocs_prepare()
         container, path = self._ocs_split_params(args)
-        sc.put_object(
+        self.ocs.put_object(
             container, path, None, content_type='application/directory')
         print "OK"
 
     def OCS_Put(self, args):
         """Uploads a file to the server"""
-        sc = self.api._ocs_prepare()
         container, path = self._ocs_split_params(args)
         fh = open(local_path, 'r')
-        sc.put_object(container, path, fh)
+        self.ocs.put_object(container, path, fh)
         print "OK"
 
     def OCS_Delete(self, args):
         """Deletes an object from a container"""
-        sc = self.api._ocs_prepare()
         container, path = self._ocs_split_params(args)
-        sc.delete_object(container, path)
+        self.ocs.delete_object(container, path)
         print "OK"
 
     def OCS_DeleteContainer(self, args):
         """Deletes a whole container"""
-        sc = self.api._ocs_prepare()
         container, path = self._ocs_split_params(args)
-        sc.delete_container(container)
+        self.ocs.delete_container(container)
         print "OK"
 
     def OVS_List(self, args):

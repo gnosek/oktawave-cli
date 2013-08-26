@@ -67,20 +67,16 @@ DICT = {
 
 class OktawaveApi(object):
 
-    def __init__(self, username, password, ocs_username=None, ocs_password=None, debug=False):
+    def __init__(self, username, password, debug=False):
         """Initialize the API instance
 
         Arguments:
         - username (string) - Oktawave account username
         - password (string) - Oktawave account password
-        - ocs_username (string) - OCS account username
-        - ocs_password (string) - OCS account password
         - debug (bool) - enable debug output?
         """
         self.username = username
         self.password = password
-        self.ocs_username = ocs_username
-        self.ocs_password = ocs_password
         self.debug = debug
 
     # HELPER METHODS ###
@@ -147,13 +143,6 @@ class OktawaveApi(object):
         """Wraps around common simple virtual machine method call pattern"""
         self._logon()
         self.clients.call(method, vm_id, self.client_id)
-
-    def _ocs_prepare(self):
-        """Wrapper method for OCS/swift API initialization"""
-        # swift_username = self._logon(args, only_common =
-        # True)._x003C_Client_x003E_k__BackingField.VmwareFriendlyName
-        return Connection(
-            'https://ocs-pl.oktawave.com/auth/v1.0', self.ocs_username, self.ocs_password)
 
     def _find_disk(self, disk_id):
         """Finds a disk (OVS) by id"""
@@ -669,3 +658,9 @@ class OktawaveApi(object):
         self._logon()
         self.clients.call('RestoreDatabase', oci_id,
                           name, backup_file, self.client_id)
+
+class OCSConnection(Connection):
+    def __init__(self, username, password):
+        super(OCSConnection, self).__init__(
+            'https://ocs-pl.oktawave.com/auth/v1.0', username, password)
+
