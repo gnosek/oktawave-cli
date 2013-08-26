@@ -21,16 +21,7 @@ class ApiClient:
     def call(self, soap_method, *args):
         method = getattr(self.client.service, soap_method)
         self.client.set_options(soapheaders=self.hc(soap_method))
-        try:
-            res = method(*args)
-        except suds.WebFault as detail:
-            print "ERROR: " + detail.fault.Reason.Text
-            if hasattr(detail.fault, 'Detail'):
-                for attr in [x for x in dir(detail.fault.Detail) if x[0] != '_']:
-                    attr_value = getattr(detail.fault.Detail, attr)
-                    if hasattr(attr_value, 'ErrorMsg'):
-                        print "Details: " + attr_value.ErrorMsg
-            sys.exit(1)
+        res = method(*args)
         if self.debug:
             print res
         return res
