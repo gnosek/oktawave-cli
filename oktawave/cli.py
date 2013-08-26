@@ -302,7 +302,7 @@ class OktawaveCli(object):
 
     def OVS_List(self, args):
         """Lists disks"""
-        disks = self.api.OVS_List(args)
+        disks = self.api.OVS_List()
         def fmt(disk):
             return [
                 disk['id'],
@@ -321,7 +321,7 @@ class OktawaveCli(object):
     def OVS_Delete(self, args):
         """Deletes a disk"""
         try:
-            self.api.OVS_Delete(args)
+            self.api.OVS_Delete(args.id)
         except OktawaveOVSDeleteError:
             print "ERROR: Disk cannot be deleted (is it mapped to any OCI instances?)."
         else:
@@ -329,13 +329,13 @@ class OktawaveCli(object):
 
     def OVS_Create(self, args):
         """Adds a disk"""
-        self.api.OVS_Create(args)
+        self.api.OVS_Create(args.name, args.capacity, args.tier, (args.disktype=='shared'))
         print "OK"
 
     def OVS_Map(self, args):
         """Maps a disk into an instance"""
         try:
-            self.api.OVS_Map(args)
+            self.api.OVS_Map(args.disk_id, args.oci_id)
         except OktawaveOVSMappedError:
             print "ERROR: Disk is already mapped to this instance"
             return 1
@@ -347,7 +347,7 @@ class OktawaveCli(object):
     def OVS_Unmap(self, args):
         """Unmaps a disk from an instance"""
         try:
-            self.api.OVS_Unmap(args)
+            self.api.OVS_Unmap(args.disk_id, args.oci_id)
         except OktawaveOVSUnmappedError:
             print "ERROR: Disk is not mapped to this instance"
             return 1
