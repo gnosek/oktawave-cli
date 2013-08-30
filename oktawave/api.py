@@ -372,6 +372,7 @@ class OktawaveApi(object):
             } for disk in data.DiskDrives[0]],
             'ips': [{
                 'ipv4': ip.Address,
+                'netmask': ip.NetMask,
                 'ipv6': ip.AddressV6,
                 'creation_date': ip.CreationDate,
                 'dhcp_branch': ip.DhcpBranch,

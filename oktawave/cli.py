@@ -200,7 +200,7 @@ class OktawaveCli(object):
 
         def fmt_ip(ip):
             return [
-                ip['ipv4'],
+                ip['ipv4'] + '/' + ip['netmask'],
                 ip['ipv6'],
                 ip['creation_date'],
                 ip['dhcp_branch'],
