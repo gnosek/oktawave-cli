@@ -120,7 +120,7 @@ class OktawaveApi(object):
                 'LogonUser', self.username, self.password, self._get_machine_ip(), "Oktawave CLI")
         except AttributeError:
             raise OktawaveLoginError()
-        self.client_id = res._x003C_Client_x003E_k__BackingField.ClientId
+        self.client_id = res.Client.ClientId
         self.client_object = res
         return res
 
@@ -188,12 +188,12 @@ class OktawaveApi(object):
         client = self.client_object
         # TODO: probably get more settings
         return {
-            'time_zone': client._x003C_TimeZone_x003E_k__BackingField.DisplayName,
-            'currency': self._dict_item_name(client._x003C_Currency_x003E_k__BackingField),
-            'date_format': self._dict_item_name(client._x003C_DateFormat_x003E_k__BackingField),
+            'time_zone': client.TimeZone.DisplayName,
+            'currency': self._dict_item_name(client.Currency),
+            'date_format': self._dict_item_name(client.DateFormat),
             'availability_zone': self._dict_item_name(
-                self.common.call('GetDictionaryItemById', client._x003C_AvailabilityZone_x003E_k__BackingField)),
-            '24h_clock': client._x003C_Is24HourClock_x003E_k__BackingField,
+                self.common.call('GetDictionaryItemById', client.AvailabilityZone)),
+            '24h_clock': client.Is24HourClock,
         }
 
     def Account_RunningJobs(self):
@@ -220,8 +220,8 @@ class OktawaveApi(object):
         self._d(users)
         for user in users[0]:
             yield {
-                'email': user._x003C_Email_x003E_k__BackingField,
-                'name': user._x003C_FullName_x003E_k__BackingField,
+                'email': user.Email,
+                'name': user.FullName,
             }
 
     # OCI (VMs) ###
@@ -655,18 +655,18 @@ class OktawaveApi(object):
 
         for db in mysql_data[0]:
             yield {
-                'file_name': b._x003C_Name_x003E_k__BackingField,
+                'file_name': b.Name,
                 'type': 'MySQL',
-                'path': b._x003C_ContainerName_x003E_k__BackingField +
-                    "/" + b._x003C_FullPath_x003E_k__BackingField
+                'path': b.ContainerName +
+                    "/" + b.FullPath
             }
 
         for db in pgsql_data[0]:
             yield {
-                'file_name': b._x003C_Name_x003E_k__BackingField,
+                'file_name': b.Name,
                 'type': 'PostgreSQL',
-                'path': b._x003C_ContainerName_x003E_k__BackingField +
-                    "/" + b._x003C_FullPath_x003E_k__BackingField
+                'path': b.ContainerName +
+                    "/" + b.FullPath
             }
 
     def ORDB_RestoreLogicalDatabase(self, oci_id, name, backup_file):
