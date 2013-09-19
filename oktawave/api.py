@@ -402,7 +402,6 @@ class OktawaveApi(object):
             raise OktawaveOCIClassNotFound()
         oci.VMClass = self.common.call('GetDictionaryItemById', oci_class_id)
         self._d(oci)
-        del(oci._Id)
         if not oci.PrivateIpv4:
             oci.PrivateIpv4 = ""
         self.clients.call(
