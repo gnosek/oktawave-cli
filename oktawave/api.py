@@ -164,15 +164,16 @@ class OktawaveApi(object):
 
     def _find_disk(self, disk_id):
         """Finds a disk (OVS) by id"""
-        dsp = self._search_params(self.clients.create('ns3:DisksSearchParams'))
-        dsp.ClientId = self.client_id
+	dsp = {
+	    'ClientId': self.client_id,
+	}
         disks = [d for d in self.clients.call(
-            'GetDisks', dsp)._results[0] if d.ClientHddId == disk_id]
+            'GetDisks', searchParams=dsp)['_results'] if d['ClientHddId'] == disk_id]
         if len(disks) == 0:
             return None
         res = disks[0]
-        if res.VirtualMachineHdds == None:
-            res.VirtualMachineHdds = [[]]
+        if res['VirtualMachineHdds'] is None:
+            res['VirtualMachineHdds'] = []
         return res
 
     def _get_machine_ip(self):
@@ -514,18 +515,21 @@ class OktawaveApi(object):
             raise OktawaveOVSNotFoundError()
 
         vms = [
-            vm.VirtualMachine.VirtualMachineId for vm in disk.VirtualMachineHdds[0]]
+            vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds']]
         if oci_id in vms:
             raise OktawaveOVSMappedError()
 
-        disk_mod = self.clients.create('ns3:ClientHddWithVMIds')
-        for attr in ['CapacityGB', 'ClientHddId', 'HddName', 'IsShared']:
-            setattr(disk_mod, attr, getattr(disk, attr))
-        disk_mod.HddStandardId = disk.HddStandard.DictionaryItemId
-        disk_mod.PaymentTypeId = disk.PaymentType.DictionaryItemId
-        disk_mod.VirtualMachineIds = self.clients.create('ns6:ArrayOfint')
-        disk_mod.VirtualMachineIds[0].extend(vms + [oci_id])
-        res = self.clients.call('UpdateDisk', disk_mod, clientId=self.client_id)
+	disk_mod = {
+	    'CapacityGB': disk['CapacityGB'],
+	    'ClientHddId': disk['ClientHddId'],
+	    'HddName': disk['HddName'],
+	    'IsShared': disk['IsShared'],
+	    'HddStandardId': disk['HddStandard']['DictionaryItemId'],
+	    'PaymentTypeId': disk['PaymentType']['DictionaryItemId'],
+	    'VirtualMachineIds': vms + [oci_id],
+	}
+
+        res = self.clients.call('UpdateDisk', clientHdd=disk_mod, clientId=self.client_id)
         if not res:
             raise OktawaveOVSMapError()
 
@@ -537,21 +541,21 @@ class OktawaveApi(object):
             raise OktawaveOVSNotFoundError()
 
         vms = [
-            vm.VirtualMachine.VirtualMachineId for vm in disk.VirtualMachineHdds[0]]
+            vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds']]
         if oci_id not in vms:
             raise OktawaveOVSUnmappedError()
 
-        disk_mod = self.clients.create('ns3:ClientHddWithVMIds')
-        for attr in ['CapacityGB', 'ClientHddId', 'HddName', 'IsShared']:
-            setattr(disk_mod, attr, getattr(disk, attr))
-        disk_mod.HddStandardId = disk.HddStandard.DictionaryItemId
-        disk_mod.PaymentTypeId = disk.PaymentType.DictionaryItemId
-        disk_mod.VirtualMachineIds = self.clients.create('ns6:ArrayOfint')
-        disk_mod.VirtualMachineIds[0].extend(
-            [vm for vm in vms if vm != oci_id])
-        if len(disk_mod.VirtualMachineIds[0]) == 0:
-            disk_mod.VirtualMachineIds = ''
-        res = self.clients.call('UpdateDisk', disk_mod, clientId=self.client_id)
+	disk_mod = {
+	    'CapacityGB': disk['CapacityGB'],
+	    'ClientHddId': disk['ClientHddId'],
+	    'HddName': disk['HddName'],
+	    'IsShared': disk['IsShared'],
+	    'HddStandardId': disk['HddStandard']['DictionaryItemId'],
+	    'PaymentTypeId': disk['PaymentType']['DictionaryItemId'],
+	    'VirtualMachineIds': [vm for vm in vms if vm != oci_id],
+	}
+
+        res = self.clients.call('UpdateDisk', clientHdd=disk_mod, clientId=self.client_id)
         if not res:
             raise OktawaveOVSUnmapError()
 
