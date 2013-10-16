@@ -1,4 +1,10 @@
-from oktawave.api import OktawaveApi, OCSConnection, DICT as OktawaveConstants
+from oktawave.api import (
+    OktawaveApi,
+    OCSConnection,
+    DICT as OktawaveConstants,
+    CloneType,
+    TemplateType,
+    )
 from oktawave.exceptions import *
 from oktawave.printer import Printer
 import sys
@@ -236,6 +242,7 @@ class OktawaveCli(object):
 
     def OCI_Create(self, args, forced_type='Machine', db_type=None):
         """Creates a new instance from template"""
+        forced_type = getattr(TemplateType, forced_type)
         try:
             self.api.OCI_Create(args.name, args.template, args.oci_class, forced_type, db_type)
         except OktawaveOCIClassNotFound:
@@ -247,7 +254,8 @@ class OktawaveCli(object):
 
     def OCI_Clone(self, args):
         """Clones a VM"""
-        self.api.OCI_Clone(args.id, args.name, args.clonetype)
+        clonetype = getattr(CloneType, args.clonetype)
+        self.api.OCI_Clone(args.id, args.name, clonetype)
 
     def _ocs_split_params(self, args):
         container = args.container

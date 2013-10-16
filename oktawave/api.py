@@ -68,6 +68,15 @@ DICT = {
     'OCI_CLASSES_DICT_ID': 12
 }
 
+class CloneType(object):
+    Runtime = 0
+    AbsoluteCopy = 1
+
+class TemplateType(object):
+    vApps = 0
+    Machine = 1
+    Database = 2
+
 class OktawaveApi(object):
 
     def __init__(self, username, password, debug=False):
@@ -406,38 +415,41 @@ class OktawaveApi(object):
         self.clients.call(
             'UpdateVirtualMachine', machine=oci, clientId=self.client_id, classChangeInScheduler=at_midnight)
 
-    def OCI_Create(self, name, template, oci_class=None, forced_type='Machine', db_type=None):
+    def OCI_Create(self, name, template, oci_class=None, forced_type=TemplateType.Machine, db_type=None):
         """Creates a new instance from template"""
         self._logon()
         template = self.clients.call(
-            'GetTemplate', template, clientId=self.client_id)
+            'GetTemplate', templateId=template, clientId=self.client_id)
         oci_class_id = None
         if oci_class:
             oci_class_id = self._oci_class_id(oci_class)
             if not oci_class_id:
                 raise OktawaveOCIClassNotFound()
         self.clients.call('CreateVirtualMachine',
-                          template,
-                          None,
-                          None,
-                          name,
-                          oci_class_id,
-                          None,
-                          DICT['OCI_PAYMENT_ID'],
-                          DICT['OCI_CONNECTION_ID'],
-                          self.client_id,
-                          None,
-                          forced_type,
-                          db_type,
-                          None,
-                          DICT['OCI_AUTOSCALING_ID']
+                          templateId=template,
+                          disks=None,
+                          additionalDisks=None,
+                          machineName=name,
+                          selectedClass=oci_class_id,
+                          selectedContainer=None,
+                          selectedPaymentMethod=DICT['OCI_PAYMENT_ID'],
+                          selectedConnectionType=DICT['OCI_CONNECTION_ID'],
+                          clientId=self.client_id,
+                          providervAppClientId=None,
+                          vAppType=forced_type,
+                          databaseTypeId=db_type,
+                          clientVmParameter=None,
+                          autoScalingTypeId=DICT['OCI_AUTOSCALING_ID']
                           )
 
     def OCI_Clone(self, oci_id, name, clonetype):
         """Clones a VM"""
         self._logon()
-        self.clients.call(
-            'CloneVirtualMachine', oci_id, name, clonetype, clientId=self.client_id)
+        self.clients.call('CloneVirtualMachine',
+                          virtualMachineID=oci_id,
+                          cloneName=name,
+                          cloneType=clonetype,
+                          clientId=self.client_id)
 
     # OVS (disks) ###
 
@@ -612,7 +624,7 @@ class OktawaveApi(object):
         if str(data.TemplateType.DictionaryItemId) != str(DICT['DB_VM_CATEGORY']):
             raise OktawaveORDBInvalidTemplateError()
         self.OCI_Create(name, template,
-                        forced_type='Database', db_type=data.DatabaseType.DictionaryItemId)
+                        forced_type=TemplateType.Database, db_type=data.DatabaseType.DictionaryItemId)
 
     def ORDB_GlobalSettings(self, oci_id):
         """Shows global database engine settings"""
