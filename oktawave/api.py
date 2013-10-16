@@ -420,8 +420,6 @@ class OktawaveApi(object):
     def OCI_Create(self, name, template, oci_class=None, forced_type=TemplateType.Machine, db_type=None):
         """Creates a new instance from template"""
         self._logon()
-        template = self.clients.call(
-            'GetTemplate', templateId=template, clientId=self.client_id)
         oci_class_id = None
         if oci_class is not None:
             oci_class_id = self._oci_class_id(oci_class)
@@ -448,7 +446,7 @@ class OktawaveApi(object):
         """Clones a VM"""
         self._logon()
         self.clients.call('CloneVirtualMachine',
-                          virtualMachineID=oci_id,
+                          virtualMachineId=oci_id,
                           cloneName=name,
                           cloneType=clonetype,
                           clientId=self.client_id)
