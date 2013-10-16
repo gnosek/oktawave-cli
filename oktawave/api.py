@@ -330,20 +330,20 @@ class OktawaveApi(object):
     def OCI_Logs(self, oci_id):
         """Shows virtual machine logs"""
         self._logon()
-        sp = self._search_params(
-            self.clients.create('ns3:VirtualMachineHistoriesSearchParams'))
-        sp.VirtualMachineId = oci_id
-        sp.PageSize = 100
-        sp.SortingDirection = 'Descending'
+        sp = {
+            'VirtualMachineId': oci_id,
+            'PageSize': 100,
+            'SortingDirection': 0,  # descending
+        }
         data = self.clients.call(
-            'GetVirtualMachineHistories', sp, clientId=self.client_id)
+            'GetVirtualMachineHistories', searchParams=sp, clientId=self.client_id)
         self._d(data)
-        for op in data._results[0]:
+        for op in data['_results']:
             yield {
-                'time': op.CreationDate,
-                'type': self._dict_item_name(op.OperationType),
-                'user_name': op.CreationUser.FullName,
-                'status': self._dict_item_name(op.Status)
+                'time': self.clients.parse_date(op['CreationDate']),
+                'type': self._dict_item_name(op['OperationType']),
+                'user_name': op['CreationUser']['FullName'],
+                'status': self._dict_item_name(op['Status'])
             }
 
     def OCI_Settings(self, oci_id):
