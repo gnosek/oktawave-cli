@@ -34,6 +34,21 @@ class TemplateType(object):
     Machine = 1
     Database = 2
 
+class PowerStatus(object):
+    PowerOn = 86
+    PowerOff = 87
+
+    def __init__(self, status):
+        self.status = status
+
+    def __str__(self):
+        if self.status == self.PowerOn:
+            return 'Powered on'
+        elif self.status == self.PowerOff:
+            return 'Powered off'
+        else:
+            return 'unknown status #%d' % self.status
+
 class OktawaveApi(object):
 
     def __init__(self, username, password, debug=False):
@@ -278,6 +293,18 @@ class OktawaveApi(object):
         }
 
     def OCI_List(self):
+        """Lists client's virtual machines' basic info"""
+        self._logon()
+        vms = self.clients.call('GetVirtualMachinesSimple', clientId=self.client_id)
+        self._d(vms)
+        for vm in vms:
+            yield {
+                'id': vm['VirtualMachineId'],
+                'name': vm['VirtualMachineName'],
+                'status': PowerStatus(vm['StatusDictId']),
+            }
+
+    def OCI_ListDetails(self):
         """Lists client's virtual machines"""
         self._logon()
         sp = { 'ClientId': self.client_id }

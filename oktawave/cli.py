@@ -131,6 +131,15 @@ class OktawaveCli(object):
         """Lists client's virtual machines"""
         vms = self.api.OCI_List()
         def fmt(vm):
+            return [vm['id'], vm['name'], vm['status']]
+
+        self._print_table(
+            ['Virtual machine ID', 'Name', 'Status'], vms, fmt)
+
+    def OCI_ListDetails(self, args):
+        """Lists client's virtual machines"""
+        vms = self.api.OCI_ListDetails()
+        def fmt(vm):
             return [vm['id'], vm['name'], vm['class_name']]
 
         self._print_table(
