@@ -19,7 +19,9 @@ class ApiClient(object):
         req = kwargs
         resp = self.session.post(self.url + method, data=json.dumps(req))
         if self.debug and resp.status_code != 200:
+            print '-- request --'
             pprint.pprint(req)
+            print '-- response --'
             pprint.pprint(resp.content)
         resp.raise_for_status()
         parsed = resp.json()
