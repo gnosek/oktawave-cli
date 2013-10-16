@@ -564,19 +564,17 @@ class OktawaveApi(object):
     def ORDB_List(self):
         """Lists databases"""
         self._logon()
-        sp = self._search_params(
-            self.clients.create('ns3:DatabaseInstanceSearchParams'))
-        sp.ClientId = self.client_id
-        data = self.clients.call('GetDatabaseInstances', sp)
-        if not data._results:
-            return
-        for db in data._results[0]:
+	sp = {
+	    'ClientId': self.client_id,
+	}
+        data = self.clients.call('GetDatabaseInstances', searchParams=sp)
+        for db in data['_results']:
             yield {
-                'id': db.VirtualMachineId,
-                'name': db.VirtualMachineName,
-                'type': self._dict_item_name(db.DatabaseType),
-                'size': db.Size,
-                'available_space': db.AvailableSpace,
+                'id': db['VirtualMachineId'],
+                'name': db['VirtualMachineName'],
+                'type': self._dict_item_name(db['DatabaseType']),
+                'size': db['Size'],
+                'available_space': db['AvailableSpace'],
             }
 
     def ORDB_TurnOn(self, oci_id):
@@ -600,33 +598,32 @@ class OktawaveApi(object):
             self._simple_vm_method('DeleteVirtualMachine', oci_id)
         else:
             self.clients.call(
-                'DeleteDatabase', oci_id, db_name, clientId=self.client_id)
+                'DeleteDatabase', virtualMachineId=oci_id, databaseName=db_name,
+	        clientId=self.client_id)
 
     ORDB_Logs = OCI_Logs
 
     def ORDB_LogicalDatabases(self, oci_id):
         """Shows logical databases"""
         self._logon()
-        sp = self._search_params(
-            self.clients.create('ns3:DatabaseInstanceSearchParams'))
-        sp.ClientId = self.client_id
-        data = self.clients.call('GetDatabaseInstances', sp)
-        if not data._results:
-            return
+	sp = {
+	    'ClientId': self.client_id,
+	}
+        data = self.clients.call('GetDatabaseInstances', searchParams=sp)
 
-        for vm in data._results[0]:
-            if oci_id is not None and str(vm.VirtualMachineId) != str(oci_id):
+        for vm in data['_results']:
+            if oci_id is not None and str(vm['VirtualMachineId']) != str(oci_id):
                 continue
 
-            for db in vm.Databases[0]:
+            for db in vm['Databases']:
                 yield {
-                    'id': db.VirtualMachineId,
-                    'name': db.DatabaseName,
-                    'type': self._dict_item_name(db.DatabaseType),
-                    'encoding': db.Encoding,
-                    'is_running': db.IsRunning,
-                    'qps': db.QPS,
-                    'size': db.Size
+                    'id': db['VirtualMachineId'],
+                    'name': db['DatabaseName'],
+                    'type': self._dict_item_name(db['DatabaseType']),
+                    'encoding': db['Encoding'],
+                    'is_running': db['IsRunning'],
+                    'qps': db['QPS'],
+                    'size': db['Size']
                 }
 
     ORDB_Settings = OCI_Settings
@@ -634,8 +631,8 @@ class OktawaveApi(object):
     def ORDB_Create(self, name, template, oci_class=None):
         """Creates a database VM"""
         self._logon()
-        data = self.clients.call('GetTemplate', template, clientId=self.client_id)
-        if str(data.TemplateType.DictionaryItemId) != str(DICT['DB_VM_CATEGORY']):
+        data = self.clients.call('GetTemplate', templateId=template, clientId=self.client_id)
+        if str(data['TemplateType']['DictionaryItemId']) != str(DICT['DB_VM_CATEGORY']):
             raise OktawaveORDBInvalidTemplateError()
         self.OCI_Create(name, template,
                         forced_type=TemplateType.Database, db_type=data.DatabaseType.DictionaryItemId)
@@ -643,11 +640,9 @@ class OktawaveApi(object):
     def ORDB_GlobalSettings(self, oci_id):
         """Shows global database engine settings"""
         self._logon()
-        data = self.clients.call('GetDatabaseConfig', oci_id, clientId=self.client_id)
-        if not data:
-            return
+        data = self.clients.call('GetDatabaseConfig', virtualMachineId=oci_id, clientId=self.client_id)
 
-        for item in data[0]:
+        for item in data:
             yield {
                 'name': item.Name,
                 'value': item.Value
@@ -656,49 +651,59 @@ class OktawaveApi(object):
     def ORDB_CreateLogicalDatabase(self, oci_id, name, encoding):
         """Creates a new logical database within an instance"""
         self._logon()
-        self.clients.call('CreateDatabase', oci_id, name, DICT[
-                          encoding.upper() + '_ENCODING'], clientId=self.client_id)
+        self.clients.call(
+	    'CreateDatabase',
+	    virtualMachineId=oci_id,
+	    databaseName=name,
+	    encodingDictId=DICT[encoding.upper() + '_ENCODING'],
+	    clientId=self.client_id)
 
     def ORDB_BackupLogicalDatabase(self, oci_id, name):
         """Creates a backup of logical database"""
         self._logon()
-        self.clients.call('BackupDatabase', oci_id, name, clientId=self.client_id)
+        self.clients.call('BackupDatabase', virtualMachineId=oci_id,
+	                  databaseName=name, clientId=self.client_id)
 
     def ORDB_MoveLogicalDatabase(self, oci_id_from, oci_id_to, name):
         """Moves a logical database"""
         self._logon()
         self.clients.call(
-            'MoveDatabase', oci_id_from, oci_id_to, name, clientId=self.client_id)
+            'MoveDatabase',
+	    virtualMachineIdFrom=oci_id_from,
+	    virtualMachineIdTo=oci_id_to,
+	    databaseName=name,
+	    clientId=self.client_id)
 
     def ORDB_Backups(self):
         """Lists logical database backups"""
         self._logon()
         mysql_data = self.clients.call(
-            'GetBackups', DICT['MYSQL_DB'], clientId=self.client_id) or [[]]
+            'GetBackups', databaseTypeDictId=DICT['MYSQL_DB'], clientId=self.client_id) or []
         pgsql_data = self.clients.call(
-            'GetBackups', DICT['POSTGRESQL_DB'], clientId=self.client_id) or [[]]
+            'GetBackups', databaseTypeDictId=DICT['POSTGRESQL_DB'], clientId=self.client_id) or []
 
-        for db in mysql_data[0]:
+        for b in mysql_data:
             yield {
-                'file_name': b.Name,
+                'file_name': b['Name'],
                 'type': 'MySQL',
-                'path': b.ContainerName +
-                    "/" + b.FullPath
+                'path': b['ContainerName'] +
+                    "/" + b['FullPath']
             }
 
-        for db in pgsql_data[0]:
+        for b in pgsql_data:
             yield {
-                'file_name': b.Name,
+                'file_name': b['Name'],
                 'type': 'PostgreSQL',
-                'path': b.ContainerName +
-                    "/" + b.FullPath
+                'path': b['ContainerName'] +
+                    "/" + b['FullPath']
             }
 
     def ORDB_RestoreLogicalDatabase(self, oci_id, name, backup_file):
         """Restores a database from backup"""
         self._logon()
-        self.clients.call('RestoreDatabase', oci_id,
-                          name, backup_file, clientId=self.client_id)
+        self.clients.call('RestoreDatabase', virtualMachineId=oci_id,
+                          databaseName=name, backupFileName=backup_file,
+	                  clientId=self.client_id)
 
 class OCSConnection(Connection):
     def __init__(self, username, password):
