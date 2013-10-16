@@ -141,8 +141,6 @@ class OktawaveApi(object):
         return sp
 
     def _dict_names(self, data, field='ItemName'):
-        import pprint
-        pprint.pprint(data)
         return [item[field] for item in data if item['LanguageDictId'] == 2]
 
     def _dict_item_name(self, data):
@@ -246,73 +244,71 @@ class OktawaveApi(object):
 
         def _tc_info(tc, parent_id):
             return {
-                'id': tc.TemplateCategoryId,
+                'id': tc['TemplateCategoryId'],
                 'name': self._dict_names(
-                    tc.TemplateCategoryNames[0], 'CategoryName')[0],
+                    tc['TemplateCategoryNames'], 'CategoryName')[0],
                 'description': self._dict_names(
-                    tc.TemplateCategoryNames[0], 'CategoryDescription')[0],
+                    tc['TemplateCategoryNames'], 'CategoryDescription')[0],
                 'parent_id': parent_id,
             }
 
-        for tc in data[0]:
+        for tc in data:
             yield _tc_info(tc, None)
-            if tc.CategoryChildren is not None:
-                for tcc in tc.CategoryChildren[0]:
-                    yield _tc_info(tcc, tc.TemplateCategoryId)
+            if tc['CategoryChildren'] is not None:
+                for tcc in tc['CategoryChildren']:
+                    yield _tc_info(tcc, tc['TemplateCategoryId'])
 
     def OCI_Templates(self, category_id, name_filter=''):
         """Lists templates in a category"""
         self._logon()
         data = self.common.call(
-            'GetTemplatesByCategory', category_id, None, None, clientId=self.client_id)
+            'GetTemplatesByCategory', categoryId=category_id, categorySystemId=None, type=None, clientId=self.client_id)
         if data:
-            return dict((template.TemplateId, template.TemplateName)
-                       for template in data[0] if name_filter in template.TemplateName)
+            return dict((template['TemplateId'], template['TemplateName'])
+                       for template in data if name_filter in template['TemplateName'])
 
     def OCI_TemplateInfo(self, template_id):
         """Shows more detailed info about a particular template"""
         self._logon()
-        data = self.clients.call('GetTemplate', template_id, clientId=self.client_id)
+        data = self.clients.call('GetTemplate', templateId=template_id, clientId=self.client_id)
 
         template_category = '/'.join(self._dict_names(
-            data.TemplateCategory.TemplateCategoryNames[0], field='CategoryName'))
+            data['TemplateCategory']['TemplateCategoryNames'], field='CategoryName'))
 
-        software = ', '.join([
-            '/'.join(self._dict_names(s.Software.SoftwareNames[0], field="Name"))
-            for s in data.SoftwareList[0]])
+        software = ', '.join(
+            '/'.join(self._dict_names(s['Software']['SoftwareNames'], field="Name"))
+            for s in data['SoftwareList'])
 
         return {
-            'template_id': data.TemplateId,
-            'template_name': data.TemplateName,
+            'template_id': data['TemplateId'],
+            'template_name': data['TemplateName'],
             'template_category': template_category,
-            'vm_class_id': data.VMClass.DictionaryItemId,
-            'vm_class_name': self._dict_item_name(data.VMClass),
-            'system_category_name': self._dict_item_name(data.TemplateSystemCategory),
-            'label': data.Name,
+            'vm_class_id': data['VMClass']['DictionaryItemId'],
+            'vm_class_name': self._dict_item_name(data['VMClass']),
+            'system_category_name': self._dict_item_name(data['TemplateSystemCategory']),
+            'label': data['Name'],
             'software': software,
-            'eth_count': data.EthernetControllersCount,
-            'connection_type': self._dict_item_name(data.ConnectionType),
+            'eth_count': data['EthernetControllersCount'],
+            'connection_type': self._dict_item_name(data['ConnectionType']),
             'disks': [{
-                    'name': hdd.HddName,
-                    'capacity_gb': hdd.CapacityGB,
-                    'is_primary': hdd.IsPrimary
-                } for hdd in data.DiskDrives[0]],
-            'description': data.Description
+                    'name': hdd['HddName'],
+                    'capacity_gb': hdd['CapacityGB'],
+                    'is_primary': hdd['IsPrimary']
+                } for hdd in data['DiskDrives']],
+            'description': data['Description']
         }
 
     def OCI_List(self):
         """Lists client's virtual machines"""
         self._logon()
-        sp = self._search_params(
-            self.clients.create('ns3:VirtualMachineSearchParams'))
-        sp.ClientId = self.client_id
-        vms = self.clients.call('GetVirtualMachines', sp)
+        sp = { 'ClientId': self.client_id }
+        vms = self.clients.call('GetVirtualMachines', searchParams=sp)
         self._d(vms)
-        for vm in vms._results[0]:
+        for vm in vms['_results']:
             yield {
-                'id': vm.VirtualMachineId,
-                'name': vm.VirtualMachineName,
-                'class_name': self._dict_item_name(vm.VMClass)
+                'id': vm['VirtualMachineId'],
+                'name': vm['VirtualMachineName'],
+                'class_name': self._dict_item_name(vm['VMClass'])
             }
 
     def OCI_Restart(self, oci_id):
