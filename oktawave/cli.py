@@ -140,10 +140,12 @@ class OktawaveCli(object):
         """Lists client's virtual machines"""
         vms = self.api.OCI_ListDetails()
         def fmt(vm):
-            return [vm['id'], vm['name'], vm['class_name']]
+            return [vm['id'], vm['name'], vm['status'], vm['class_name'],
+                    '%d/%d MHz' % (vm['cpu_usage_mhz'], vm['cpu_mhz']),
+                    '%d/%d MB' % (vm['memory_usage_mb'], vm['memory_mb'])]
 
         self._print_table(
-            ['Virtual machine ID', 'Name', 'Class'], vms, fmt)
+            ['Virtual machine ID', 'Name', 'Status', 'Class', 'CPU', 'Memory'], vms, fmt)
 
     def OCI_Restart(self, args):
         """Restarts given VM"""

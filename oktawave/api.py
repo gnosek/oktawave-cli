@@ -314,7 +314,12 @@ class OktawaveApi(object):
             yield {
                 'id': vm['VirtualMachineId'],
                 'name': vm['VirtualMachineName'],
-                'class_name': self._dict_item_name(vm['VMClass'])
+                'status': PowerStatus(vm['StatusDictId']),
+                'class_name': self._dict_item_name(vm['VMClass']),
+                'cpu_mhz': vm['CpuMhz'],
+                'cpu_usage_mhz': vm['CpuMhzUsage'],
+                'memory_mb': vm['RamMB'],
+                'memory_usage_mb': vm['RamMBUsage'],
             }
 
     def OCI_Restart(self, oci_id):
