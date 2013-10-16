@@ -456,31 +456,32 @@ class OktawaveApi(object):
     def OVS_List(self):
         """Lists disks"""
         self._logon()
-        dsp = self._search_params(self.clients.create('ns3:DisksSearchParams'))
-        dsp.ClientId = self.client_id
-        data = self.clients.call('GetDisks', dsp)
-        for disk in data._results[0]:
-            if disk.VirtualMachineHdds is None:
+        dsp = {
+            'ClientId': self.client_id,
+        }
+        data = self.clients.call('GetDisks', searchParams=dsp)
+        for disk in data['_results']:
+            if disk['VirtualMachineHdds'] is None:
                 vms = []
             else:
                 vms = [{
-                    'id': vm.VirtualMachine.VirtualMachineId,
-                    'name': vm.VirtualMachine.VirtualMachineName,
-                } for vm in disk.VirtualMachineHdds[0]]
+                    'id': vm['VirtualMachine']['VirtualMachineId'],
+                    'name': vm['VirtualMachine']['VirtualMachineName'],
+                } for vm in disk['VirtualMachineHdds']]
             yield {
-                'id': disk.ClientHddId,
-                'name': disk.HddName,
-                'tier': self._dict_item_name(disk.HddStandard),
-                'capacity_gb': disk.CapacityGB,
-                'used_gb': disk.UsedCapacityGB,
-                'is_shared': disk.IsShared,
+                'id': disk['ClientHddId'],
+                'name': disk['HddName'],
+                'tier': self._dict_item_name(disk['HddStandard']),
+                'capacity_gb': disk['CapacityGB'],
+                'used_gb': disk['UsedCapacityGB'],
+                'is_shared': disk['IsShared'],
                 'vms': vms,
             }
 
     def OVS_Delete(self, ovs_id):
         """Deletes a disk"""
         self._logon()
-        res = self.clients.call('DeleteDisk', ovs_id, clientId=self.client_id)
+        res = self.clients.call('DeleteDisk', clientHddId=ovs_id, clientId=self.client_id)
         if not res:
             raise OktawaveOVSDeleteError()
 
