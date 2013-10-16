@@ -423,7 +423,7 @@ class OktawaveApi(object):
         template = self.clients.call(
             'GetTemplate', templateId=template, clientId=self.client_id)
         oci_class_id = None
-        if oci_class:
+        if oci_class is not None:
             oci_class_id = self._oci_class_id(oci_class)
             if not oci_class_id:
                 raise OktawaveOCIClassNotFound()

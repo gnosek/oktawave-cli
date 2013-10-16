@@ -254,6 +254,8 @@ class OktawaveCli(object):
     def OCI_Create(self, args, forced_type='Machine', db_type=None):
         """Creates a new instance from template"""
         forced_type = getattr(TemplateType, forced_type)
+        if not args.oci_class:
+            args.oci_class = None
         try:
             self.api.OCI_Create(args.name, args.template, args.oci_class, forced_type, db_type)
         except OktawaveOCIClassNotFound:
