@@ -12,7 +12,7 @@ class ApiClient(object):
         session.auth = ('API\\' + username, password)
         session.headers.update(**{'Content-Type': 'text/json'})
         self.session = session
-        self.debug = debug or True
+        self.debug = debug
 
     def call(self, method, **kwargs):
         req = kwargs

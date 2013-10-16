@@ -151,7 +151,7 @@ class OktawaveApi(object):
     def _simple_vm_method(self, method, vm_id):
         """Wraps around common simple virtual machine method call pattern"""
         self._logon()
-        self.clients.call(method, vm_id, self.client_id)
+        self.clients.call(method, virtualMachineId=vm_id, clientId=self.client_id)
 
     def _find_disk(self, disk_id):
         """Finds a disk (OVS) by id"""
@@ -207,30 +207,30 @@ class OktawaveApi(object):
 
     def Account_RunningJobs(self):
         self._logon()
-        res = self.common.call('GetRunningOperations', self.client_id)
-        if str(res) == '':
+        res = self.common.call('GetRunningOperations', clientId=self.client_id)
+        if not res:
             return
-        for op in res[0]:
+        for op in res:
             yield {
-                'id': op.AsynchronousOperationId,
-                'creation_date': op.CreationDate,
-                'creation_user_name': op.CreationUserFullName,
-                'type': self._dict_item_name(op.OperationType),
-                'object_type': self._dict_item_name(op.ObjectType),
-                'object_name': op.ObjectName,
-                'progress_percent': op.Progress,
-                'status': self._dict_item_name(op.Status)
+                'id': op['AsynchronousOperationId'],
+                'creation_date': op['CreationDate'],
+                'creation_user_name': op['CreationUserFullName'],
+                'type': self._dict_item_name(op['OperationType']),
+                'object_type': self._dict_item_name(op['ObjectType']),
+                'object_name': op['ObjectName'],
+                'progress_percent': op['Progress'],
+                'status': self._dict_item_name(op['Status'])
             }
 
     def Account_Users(self):
         """Print users in client account."""
         self._logon()
-        users = self.clients.call('GetClientUsers', self.client_id)
+        users = self.clients.call('GetClientUsers', clientId=self.client_id)
         self._d(users)
-        for user in users[0]:
+        for user in users:
             yield {
-                'email': user.Email,
-                'name': user.FullName,
+                'email': user['Email'],
+                'name': user['FullName'],
             }
 
     # OCI (VMs) ###
