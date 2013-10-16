@@ -1,58 +1,13 @@
 from client import ApiClient
 from exceptions import *
-from suds.sax.element import Element
-import sys
-import suds
 try:
     from swiftclient import Connection
 except ImportError:
     from swift.common.client import Connection
-import itertools
-
-
-# Patching some stuff in suds to get it working with SOAP 1.2
-suds.bindings.binding.envns = (
-    'SOAP-ENV', 'http://www.w3.org/2003/05/soap-envelope')
-
-
-# WSDL addresses
-wsdl_common = 'https://api.oktawave.com/CommonService.svc?wsdl'
-wsdl_clients = 'https://api.oktawave.com/ClientsService.svc?wsdl'
-
-# Fixing WSDL to work with suds
-ans = ('a', 'http://www.w3.org/2005/08/addressing')
 
 # JSON API endpoints
 jsonapi_common = 'https://api.oktawave.com/CommonService.svc/json'
 jsonapi_clients = 'https://api.oktawave.com/ClientsService.svc/json'
-
-def header(key, value, namespace=ans):
-    return Element(key, ns=namespace).setText(value)
-
-
-def hc_common(method):
-    return [
-        header('Action', 'http://K2.CloudsFactory/ICommon/' + method),
-        header('To', 'https://adamm.cloud.local:450/CommonService.svc')
-    ]
-
-
-def hc_clients(method):
-    return [
-        header('Action', 'http://K2.CloudsFactory/IClients/' + method),
-        header('To', 'https://adamm.cloud.local:450/ClientsService.svc')
-    ]
-
-docs_common = [
-    'http://schemas.datacontract.org/2004/07/K2.CloudsFactory.Common',
-    'http://schemas.microsoft.com/2003/10/Serialization/'
-]
-docs_clients = [
-    'http://schemas.microsoft.com/2003/10/Serialization/',
-    'http://schemas.microsoft.com/2003/10/Serialization/Arrays',
-    'http://schemas.datacontract.org/2004/07/K2.CloudsFactory.Common',
-    'http://schemas.datacontract.org/2004/07/K2.CloudsFactory.Common.Models'
-]
 
 DICT = {
     'DB_VM_CATEGORY': 324,
@@ -141,15 +96,6 @@ class OktawaveApi(object):
         self.client_id = res['Client']['ClientId']
         self.client_object = res
         return res
-
-    def _search_params(self, sp):
-        # getting rid of NoneType non-special attributes, required for
-        # searchParams
-        self._d(sp)
-        for param in [m for m in dir(sp) if m[0] != '_']:
-            if type(getattr(sp, param)) is not "NoneType":
-                delattr(sp, param)
-        return sp
 
     def _dict_names(self, data, field='ItemName'):
         return [item[field] for item in data if item['LanguageDictId'] == 2]

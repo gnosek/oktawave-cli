@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import suds
 import sys
 from oktawave.cli import OktawaveCli
 import logging
@@ -63,7 +62,6 @@ if(__name__ == '__main__'):
 	parser.add_argument('-p', '--password', help="Oktawave password")
 	parser.add_argument('-ocsu', '--ocs-username', help="OCS username")
 	parser.add_argument('-ocsp', '--ocs-password', help="OCS password")
-	parser.add_argument('--nocache', action='store_true', help='Clear WSDL cache before proceeding')
 	parser.add_argument('-d', '--debug', action='store_true', help='Enable debugging output')
 	sysparser = parser
 	if '-i' in sys.argv or '--interactive' in sys.argv:
@@ -265,10 +263,6 @@ if(__name__ == '__main__'):
 		# uncomment if you want even more debug
 		#logger.root.setLevel(logging.DEBUG)
 		logger.root.addHandler(logging.StreamHandler(sys.stdout))
-		logging.getLogger('suds.client').setLevel(logging.DEBUG)
-		logging.getLogger('suds.transport').setLevel(logging.DEBUG)
-	if args.nocache:
-		subprocess.call('rm -rf /tmp/suds', shell=True)
 	if args.interactive:
 		print "This is Oktawave CLI, version " + VERSION + '.'
 		print "Logging in to Oktawave..."
