@@ -65,7 +65,9 @@ DICT = {
     'OCI_CONNECTION_ID': 37,
     'OCI_PAYMENT_ID': 33,
     'OCI_AUTOSCALING_ID': 184,
-    'OCI_CLASSES_DICT_ID': 12
+    'OCI_CLASSES_DICT_ID': 12,
+    'OVS_TIERS_DICT_ID': 17,
+    'OVS_PAYMENT_ID': 33,
 }
 
 class CloneType(object):
@@ -176,15 +178,21 @@ class OktawaveApi(object):
     def _get_machine_ip(self):
         return '127.0.0.1'
 
+    def _dict_item(self, dict_id, key, default=0):
+        items = self.common.call(
+            'GetDictionaryItems', dictionaryId=dict_id, clientId=self.client_id)
+        name2id = dict((self._dict_item_name(item), item['DictionaryItemId']) for item in items)
+        self._d(name2id)
+	return name2id.get(key, default)
+
     def _oci_class_id(self, class_name):
         """Returns ID of an OCI class with a given name"""
-        classes = self.common.call(
-            'GetDictionaryItems', dictionaryId=DICT['OCI_CLASSES_DICT_ID'], clientId=self.client_id)
-        name2id = dict((self._dict_item_name(cls), cls['DictionaryItemId']) for cls in classes)
-        self._d(name2id)
-        if class_name in name2id:
-            return name2id[class_name]
-        return 0
+	return self._dict_item(DICT['OCI_CLASSES_DICT_ID'], class_name)
+
+    def _ovs_tier_id(self, tier):
+	"""Returns ID of a given disk tier"""
+	tier_name = 'Tier ' + str(tier)
+	return self._dict_item(DICT['OVS_TIERS_DICT_ID'], tier_name)
 
     # API methods below ###
 
@@ -488,14 +496,15 @@ class OktawaveApi(object):
     def OVS_Create(self, name, capacity_gb, tier, shared):
         """Adds a disk"""
         self._logon()
-        disk = self.clients.create('ns3:ClientHddWithVMIds')
-        disk.CapacityGB = capacity_gb
-        disk.HddName = name
-        disk.HddStandardId = 47 + int(tier)
-        disk.IsShared = shared
-        disk.PaymentTypeId = 37
-        disk.VirtualMachineIds = ''  # this seems to solve the empty-array error problem, but certainly is not nice
-        self.clients.call('CreateDisk', disk, clientId=self.client_id)
+        disk = {
+            'CapacityGB': capacity_gb,
+            'HddName': name,
+            'HddStandardId': self._ovs_tier_id(tier),
+            'IsShared': shared,
+            'PaymentTypeId': DICT['OVS_PAYMENT_ID'],
+            'VirtualMachineIds': [],
+        }
+        self.clients.call('CreateDisk', clientHdd=disk, clientId=self.client_id)
 
     def OVS_Map(self, ovs_id, oci_id):
         """Maps a disk into an instance"""
