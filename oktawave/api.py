@@ -141,6 +141,21 @@ class OktawaveApi(object):
 	tier_name = 'Tier ' + str(tier)
 	return self._dict_item(DICT['OVS_TIERS_DICT_ID'], tier_name)
 
+    def _ovs_disk_mod(self, disk):
+	vms = [
+	    vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds']]
+
+	disk_mod = {
+	    'CapacityGB': disk['CapacityGB'],
+	    'ClientHddId': disk['ClientHddId'],
+	    'HddName': disk['HddName'],
+	    'IsShared': disk['IsShared'],
+	    'HddStandardId': disk['HddStandard']['DictionaryItemId'],
+	    'PaymentTypeId': disk['PaymentType']['DictionaryItemId'],
+	    'VirtualMachineIds': vms,
+	}
+	return disk_mod
+
     # API methods below ###
 
     # General / Account ###
@@ -460,20 +475,10 @@ class OktawaveApi(object):
         if disk is None:
             raise OktawaveOVSNotFoundError()
 
-        vms = [
-            vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds']]
-        if oci_id in vms:
+        disk_mod = self._ovs_disk_mod(disk)
+        if oci_id in disk_mod['VirtualMachineIds']:
             raise OktawaveOVSMappedError()
-
-	disk_mod = {
-	    'CapacityGB': disk['CapacityGB'],
-	    'ClientHddId': disk['ClientHddId'],
-	    'HddName': disk['HddName'],
-	    'IsShared': disk['IsShared'],
-	    'HddStandardId': disk['HddStandard']['DictionaryItemId'],
-	    'PaymentTypeId': disk['PaymentType']['DictionaryItemId'],
-	    'VirtualMachineIds': vms + [oci_id],
-	}
+	disk_mod['VirtualMachineIds'].append('oci_id')
 
         res = self.clients.call('UpdateDisk', clientHdd=disk_mod, clientId=self.client_id)
         if not res:
@@ -486,20 +491,11 @@ class OktawaveApi(object):
         if disk is None:
             raise OktawaveOVSNotFoundError()
 
-        vms = [
-            vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds']]
-        if oci_id not in vms:
+        disk_mod = self._ovs_disk_mod(disk)
+        if oci_id not in disk_mod['VirtualMachineIds']:
             raise OktawaveOVSUnmappedError()
 
-	disk_mod = {
-	    'CapacityGB': disk['CapacityGB'],
-	    'ClientHddId': disk['ClientHddId'],
-	    'HddName': disk['HddName'],
-	    'IsShared': disk['IsShared'],
-	    'HddStandardId': disk['HddStandard']['DictionaryItemId'],
-	    'PaymentTypeId': disk['PaymentType']['DictionaryItemId'],
-	    'VirtualMachineIds': [vm for vm in vms if vm != oci_id],
-	}
+	disk_mod['VirtualMachineIds'].remove(oci_id)
 
         res = self.clients.call('UpdateDisk', clientHdd=disk_mod, clientId=self.client_id)
         if not res:
