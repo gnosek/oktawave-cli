@@ -501,6 +501,34 @@ class OktawaveApi(object):
         if not res:
             raise OktawaveOVSUnmapError()
 
+    def OVS_ChangeTier(self, ovs_id, tier):
+        self._logon()
+        disk = self._find_disk(ovs_id)
+        if disk is None:
+            raise OktawaveOVSNotFoundError()
+
+        disk_mod = self._ovs_disk_mod(disk)
+        disk_mod['HddStandardId'] = self._ovs_tier_id(tier)
+
+        self.clients.call('UpdateDisk', clientHdd=disk_mod, clientId=self.client_id)
+
+    def OVS_Extend(self, ovs_id, capacity_gb):
+        self._logon()
+        disk = self._find_disk(ovs_id)
+        if disk is None:
+            raise OktawaveOVSNotFoundError()
+
+        disk_mod = self._ovs_disk_mod(disk)
+        if disk_mod['VirtualMachineIds']:
+            raise OktawaveOVSMappedError()
+
+        if disk_mod['CapacityGB'] > capacity_gb:
+            raise OktawaveOVSTooSmallError()
+
+        disk_mod['CapacityGB'] = capacity_gb
+
+        self.clients.call('UpdateDisk', clientHdd=disk_mod, clientId=self.client_id)
+
     # ORDB (databases) ###
 
     def ORDB_List(self):

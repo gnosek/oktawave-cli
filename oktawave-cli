@@ -148,7 +148,7 @@ if(__name__ == '__main__'):
         ['Create', 'Add a new disk', [
             ['name', 'Disk name'],
             ['capacity', 'Disk capacity (GB)', {'type' : int}],
-            ['tier', 'Disk tier (1, 2 or 3)', {'type' : int, 'choices' : [1, 2, 3]}],
+            ['tier', 'Disk tier (1, 2, 3 or 5)', {'type' : int, 'choices' : [1, 2, 3, 4, 5]}],
             ['disktype', 'If disk is shared or unshared?', {'choices': ['shared', 'unshared']}]
             ]],
         ['Map', 'Map a disk to an instance', [
@@ -158,6 +158,14 @@ if(__name__ == '__main__'):
         ['Unmap', 'Unmap a disk from an instance', [
             ['disk_id', 'Disk ID, as returned by "OVS List"', {'type' : int}],
             ['oci_id', 'VM instance ID, as returned by "OCI List"', {'type' : int}]
+        ]],
+        ['ChangeTier', 'Change disk\'s tier', [
+            ['disk_id', 'Disk ID, as returned by "OVS List"', {'type' : int}],
+            ['tier', 'Disk tier (1, 2, 3, 4 or 5)', {'type' : int, 'choices' : [1, 2, 3, 4, 5]}],
+        ]],
+        ['Extend', 'Change disk\'s size', [
+            ['disk_id', 'Disk ID, as returned by "OVS List"', {'type' : int}],
+            ['size', 'New disk size (GB). It cannot be smaller than the current disk size.', {'type' : int}],
         ]]
     ])
     ordb_parser = namespace_parser.add_parser('ORDB', help='Commands related to ORDB')

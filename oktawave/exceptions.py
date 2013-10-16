@@ -22,5 +22,8 @@ class OktawaveOVSMappedError(ValueError):
 class OktawaveOVSUnmappedError(ValueError):
     pass
 
+class OktawaveOVSTooSmallError(ValueError):
+    pass
+
 class OktawaveORDBInvalidTemplateError(ValueError):
     pass

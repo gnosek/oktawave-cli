@@ -378,6 +378,24 @@ class OktawaveCli(object):
         else:
             print "OK"
 
+    def OVS_ChangeTier(self, args):
+        """Changes OVS tier"""
+        self.api.OVS_ChangeTier(args.disk_id, args.tier)
+        print "OK"
+
+    def OVS_Extend(self, args):
+        """Resizes OVS volume"""
+        try:
+            self.api.OVS_Extend(args.disk_id, args.size)
+        except OktawaveOVSMappedError:
+            print "ERROR: Disk is mapped to an instance"
+            return 1
+        except OktawaveOVSTooSmallError:
+            print "ERROR: Requested size smaller than current size"
+            return 1
+        else:
+            print "OK"
+
     def ORDB_List(self, args):
         """Lists databases"""
         dbs = self.api.ORDB_List()
