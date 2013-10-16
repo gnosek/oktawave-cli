@@ -22,6 +22,9 @@ wsdl_clients = 'https://api.oktawave.com/ClientsService.svc?wsdl'
 # Fixing WSDL to work with suds
 ans = ('a', 'http://www.w3.org/2005/08/addressing')
 
+# JSON API endpoints
+jsonapi_common = 'https://api.oktawave.com/CommonService.svc/json'
+jsonapi_clients = 'https://api.oktawave.com/ClientsService.svc/json'
 
 def header(key, value, namespace=ans):
     return Element(key, ns=namespace).setText(value)
@@ -92,7 +95,7 @@ class OktawaveApi(object):
         if hasattr(self, 'common'):
             return
         self.common = ApiClient(
-            wsdl_common, self.username, self.password, hc_common, docs_common, self.debug)
+            jsonapi_common, self.username, self.password, self.debug)
         self._d(self.common)
 
     def _init_clients(self):
@@ -100,8 +103,7 @@ class OktawaveApi(object):
         if hasattr(self, 'clients'):
             return
         self.clients = ApiClient(
-            wsdl_clients, self.username, self.password, hc_clients, docs_clients, self.debug)
-        self.clients.client.factory.separator('########')
+            jsonapi_clients, self.username, self.password, self.debug)
         self._d(self.clients)
 
     def _logon(self, only_common=False):
@@ -117,10 +119,15 @@ class OktawaveApi(object):
             return self.client_object
         try:
             res = self.common.call(
-                'LogonUser', self.username, self.password, self._get_machine_ip(), "Oktawave CLI")
+                'LogonUser',
+                user=self.username,
+                password=self.password,
+                ipAddress=self._get_machine_ip(),
+                userAgent="Oktawave CLI")
         except AttributeError:
+            raise
             raise OktawaveLoginError()
-        self.client_id = res.Client.ClientId
+        self.client_id = res['Client']['ClientId']
         self.client_object = res
         return res
 
@@ -134,10 +141,12 @@ class OktawaveApi(object):
         return sp
 
     def _dict_names(self, data, field='ItemName'):
-        return [getattr(item, field) for item in data if item.LanguageDictId == 2]
+        import pprint
+        pprint.pprint(data)
+        return [item[field] for item in data if item['LanguageDictId'] == 2]
 
-    def _dict_item_name(self, data, sep=', ', field='ItemName'):
-        return self._dict_names(data.DictionaryItemNames[0], field)[0]
+    def _dict_item_name(self, data):
+        return self._dict_names(data['DictionaryItemNames'], 'ItemName')[0]
 
     def _simple_vm_method(self, method, vm_id):
         """Wraps around common simple virtual machine method call pattern"""
@@ -188,12 +197,12 @@ class OktawaveApi(object):
         client = self.client_object
         # TODO: probably get more settings
         return {
-            'time_zone': client.TimeZone.DisplayName,
-            'currency': self._dict_item_name(client.Currency),
-            'date_format': self._dict_item_name(client.DateFormat),
+            'time_zone': client['TimeZone']['DisplayName'],
+            'currency': self._dict_item_name(client['Currency']),
+            'date_format': self._dict_item_name(client['DateFormat']),
             'availability_zone': self._dict_item_name(
-                self.common.call('GetDictionaryItemById', client.AvailabilityZone)),
-            '24h_clock': client.Is24HourClock,
+                self.common.call('GetDictionaryItemById', dictionaryItemId=client['AvailabilityZone'])),
+            '24h_clock': client['Is24HourClock'],
         }
 
     def Account_RunningJobs(self):
@@ -400,7 +409,7 @@ class OktawaveApi(object):
         oci_class_id = self._oci_class_id(oci_class)
         if not oci_class_id:
             raise OktawaveOCIClassNotFound()
-        oci.VMClass = self.common.call('GetDictionaryItemById', oci_class_id)
+        oci.VMClass = self.common.call('GetDictionaryItemById', dictionaryItemId=oci_class_id)
         self._d(oci)
         if not oci.PrivateIpv4:
             oci.PrivateIpv4 = ""

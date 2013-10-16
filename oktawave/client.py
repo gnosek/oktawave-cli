@@ -1,34 +1,26 @@
-from suds.client import Client
-from suds.xsd.doctor import Import, ImportDoctor
-import suds
-import sys
-import oktawave.suds_monkeypatch
+import json
+import requests
+import pprint
 
-# wrapper over suds.Client
+class ApiClient(object):
 
+    def __init__(self, url, username, password, debug=False):
+        if not url.endswith('/'):
+            url = url + '/'
+        self.url = url
+        session = requests.session()
+        session.auth = ('API\\' + username, password)
+        session.headers.update(**{'Content-Type': 'text/json'})
+        self.session = session
+        self.debug = debug or True
 
-class ApiClient:
-
-    def __init__(self, wsdl, username, password, headersCreator=lambda: [], doctors=[], debug=False):
-        schema_imports = [Import(path) for path in doctors]
-        schema_doctor = ImportDoctor(*schema_imports)
-        self.client = Client(username='API\\' + username,
-                             password=password, url=wsdl, doctor=schema_doctor)
-        self.client.options.headers.update(**{'Content-Type':
-                 'application/soap+xml; charset=utf-8'})
-        self.hc = headersCreator
-        self.debug = debug
-
-    def call(self, soap_method, *args):
-        method = getattr(self.client.service, soap_method)
-        self.client.set_options(soapheaders=self.hc(soap_method))
-        res = method(*args)
+    def call(self, method, **kwargs):
+        req = kwargs
+        resp = self.session.post(self.url + method, data=json.dumps(req))
+        resp.raise_for_status()
+        parsed = resp.json()
         if self.debug:
-            print res
-        return res
-
-    def create(self, obj_type, *args):
-        return self.client.factory.create(obj_type, *args)  # TODO: try to resolve namespace prefix based on wsdl
-
-    def __str__(self):
-        return str(self.client)
+            pprint.pprint(parsed)
+        if len(parsed) == 1:
+            return parsed.values().pop()
+        return parsed
