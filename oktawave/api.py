@@ -149,7 +149,7 @@ class OktawaveApi(object):
     def _simple_vm_method(self, method, vm_id):
         """Wraps around common simple virtual machine method call pattern"""
         self._logon()
-        self.clients.call(method, virtualMachineId=vm_id, clientId=self.client_id)
+        return self.clients.call(method, virtualMachineId=vm_id, clientId=self.client_id)
 
     def _find_disk(self, disk_id):
         """Finds a disk (OVS) by id"""
@@ -348,51 +348,49 @@ class OktawaveApi(object):
 
     def OCI_Settings(self, oci_id):
         """Shows basic VM settings (IP addresses, OS, names, autoscaling etc.)"""
-        self._logon()
-        data = self.clients.call(
-            'GetVirtualMachineById', oci_id, clientId=self.client_id)
+        data = self._simple_vm_method('GetVirtualMachineById', oci_id)
 
         res = {
-            'autoscaling': self._dict_item_name(data.AutoScalingType),
-            'connection_type': self._dict_item_name(data.ConnectionType),
-            'cpu_mhz': data.CpuMhz,
-            'cpu_usage_mhz': data.CpuMhzUsage,
-            'creation_date': data.CreationDate,
-            'creation_user_name': data.CreationUserSimple.FullName,
-            'iops_usage': data.IopsUsage,
-            'last_change_date': data.LastChangeDate,
-            'payment_type': self._dict_item_name(data.PaymentType),
-            'memory_mb': data.RamMB,
-            'memory_usage_mb': data.RamMBUsage,
-            'status': self._dict_item_name(data.Status),
-            'name': data.VirtualMachineName,
-            'vm_class_name': self._dict_item_name(data.VMClass),
+            'autoscaling': self._dict_item_name(data['AutoScalingType']),
+            'connection_type': self._dict_item_name(data['ConnectionType']),
+            'cpu_mhz': data['CpuMhz'],
+            'cpu_usage_mhz': data['CpuMhzUsage'],
+            'creation_date': self.clients.parse_date(data['CreationDate']),
+            'creation_user_name': data['CreationUserSimple']['FullName'],
+            'iops_usage': data['IopsUsage'],
+            'last_change_date': self.clients.parse_date(data['LastChangeDate']),
+            'payment_type': self._dict_item_name(data['PaymentType']),
+            'memory_mb': data['RamMB'],
+            'memory_usage_mb': data['RamMBUsage'],
+            'status': self._dict_item_name(data['Status']),
+            'name': data['VirtualMachineName'],
+            'vm_class_name': self._dict_item_name(data['VMClass']),
             'disks': [{
-                'name': disk.ClientHdd.HddName,
-                'capacity_gb': disk.ClientHdd.CapacityGB,
-                'creation_date': disk.ClientHdd.CreationDate,
-                'creation_user_name': disk.ClientHdd.CreationUser.FullName,
-                'is_primary': disk.IsPrimary
-            } for disk in data.DiskDrives[0]],
+                'name': disk['ClientHdd']['HddName'],
+                'capacity_gb': disk['ClientHdd']['CapacityGB'],
+                'creation_date': self.clients.parse_date(disk['ClientHdd']['CreationDate']),
+                'creation_user_name': disk['ClientHdd']['CreationUser']['FullName'],
+                'is_primary': disk['IsPrimary']
+            } for disk in data['DiskDrives']],
             'ips': [{
-                'ipv4': ip.Address,
-                'netmask': ip.NetMask,
-                'ipv6': ip.AddressV6,
-                'creation_date': ip.CreationDate,
-                'dhcp_branch': ip.DhcpBranch,
-                'gateway': ip.Gateway,
-                'status': self._dict_item_name(ip.IPStatus),
-                'last_change_date': ip.LastChangeDate,
-                'macaddr': ip.MacAddress,
-            } for ip in data.IPs[0]],
+                'ipv4': ip['Address'],
+                'netmask': ip['NetMask'],
+                'ipv6': ip['AddressV6'],
+                'creation_date': self.clients.parse_date(ip['CreationDate']),
+                'dhcp_branch': ip['DhcpBranch'],
+                'gateway': ip['Gateway'],
+                'status': self._dict_item_name(ip['IPStatus']),
+                'last_change_date': self.clients.parse_date(ip['LastChangeDate']),
+                'macaddr': ip['MacAddress'],
+            } for ip in data['IPs']],
             'vlans': [],
         }
-        if data.PrivateIpv4:
+        if data['PrivateIpv4']:
             res['vlans'] = [{
-                'ipv4': vlan.PrivateIpAddress,
-                'creation_date': vlan.CreationDate,
-                'macaddr': vlan.MacAddress,
-            } for vlan in data.PrivateIpv4[0]]
+                'ipv4': vlan['PrivateIpAddress'],
+                'creation_date': self.clients.parse_date(vlan['CreationDate']),
+                'macaddr': vlan['MacAddress'],
+            } for vlan in data['PrivateIpv4']]
 
         return res
 
