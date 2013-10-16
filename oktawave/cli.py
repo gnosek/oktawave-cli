@@ -4,7 +4,7 @@ from oktawave.api import (
     DICT as OktawaveConstants,
     CloneType,
     TemplateType,
-    )
+)
 from oktawave.exceptions import *
 from oktawave.printer import Printer
 import sys
@@ -124,7 +124,7 @@ class OktawaveCli(object):
             ['Connection', ti['connection_type']],
             ['Disk drives', ', '.join(_hdd_label(hdd) for hdd in ti['disks'])],
             ['Description', ti['description']],
-            ])
+        ])
         self.p.print_table(tab)
 
     def OCI_List(self, args):
@@ -225,7 +225,7 @@ class OktawaveCli(object):
             'Status',
             'Last changed',
             'MAC address'
-        ], settings['ips'], fmt_ip)
+            ], settings['ips'], fmt_ip)
 
         if settings['vlans']:
             self.p._print("Private vlans")

@@ -110,9 +110,9 @@ class OktawaveApi(object):
 
     def _find_disk(self, disk_id):
         """Finds a disk (OVS) by id"""
-	dsp = {
-	    'ClientId': self.client_id,
-	}
+        dsp = {
+            'ClientId': self.client_id,
+        }
         disks = [d for d in self.clients.call(
             'GetDisks', searchParams=dsp)['_results'] if d['ClientHddId'] == disk_id]
         if len(disks) == 0:
@@ -130,31 +130,31 @@ class OktawaveApi(object):
             'GetDictionaryItems', dictionaryId=dict_id, clientId=self.client_id)
         name2id = dict((self._dict_item_name(item), item['DictionaryItemId']) for item in items)
         self._d(name2id)
-	return name2id.get(key, default)
+        return name2id.get(key, default)
 
     def _oci_class_id(self, class_name):
         """Returns ID of an OCI class with a given name"""
-	return self._dict_item(DICT['OCI_CLASSES_DICT_ID'], class_name)
+        return self._dict_item(DICT['OCI_CLASSES_DICT_ID'], class_name)
 
     def _ovs_tier_id(self, tier):
-	"""Returns ID of a given disk tier"""
-	tier_name = 'Tier ' + str(tier)
-	return self._dict_item(DICT['OVS_TIERS_DICT_ID'], tier_name)
+        """Returns ID of a given disk tier"""
+        tier_name = 'Tier ' + str(tier)
+        return self._dict_item(DICT['OVS_TIERS_DICT_ID'], tier_name)
 
     def _ovs_disk_mod(self, disk):
-	vms = [
-	    vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds']]
+        vms = [
+            vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds']]
 
-	disk_mod = {
-	    'CapacityGB': disk['CapacityGB'],
-	    'ClientHddId': disk['ClientHddId'],
-	    'HddName': disk['HddName'],
-	    'IsShared': disk['IsShared'],
-	    'HddStandardId': disk['HddStandard']['DictionaryItemId'],
-	    'PaymentTypeId': disk['PaymentType']['DictionaryItemId'],
-	    'VirtualMachineIds': vms,
-	}
-	return disk_mod
+        disk_mod = {
+            'CapacityGB': disk['CapacityGB'],
+            'ClientHddId': disk['ClientHddId'],
+            'HddName': disk['HddName'],
+            'IsShared': disk['IsShared'],
+            'HddStandardId': disk['HddStandard']['DictionaryItemId'],
+            'PaymentTypeId': disk['PaymentType']['DictionaryItemId'],
+            'VirtualMachineIds': vms,
+        }
+        return disk_mod
 
     # API methods below ###
 
@@ -244,7 +244,7 @@ class OktawaveApi(object):
             'GetTemplatesByCategory', categoryId=category_id, categorySystemId=None, type=None, clientId=self.client_id)
         if data:
             return dict((template['TemplateId'], template['TemplateName'])
-                       for template in data if name_filter in template['TemplateName'])
+                        for template in data if name_filter in template['TemplateName'])
 
     def OCI_TemplateInfo(self, template_id):
         """Shows more detailed info about a particular template"""
@@ -270,9 +270,9 @@ class OktawaveApi(object):
             'eth_count': data['EthernetControllersCount'],
             'connection_type': self._dict_item_name(data['ConnectionType']),
             'disks': [{
-                    'name': hdd['HddName'],
-                    'capacity_gb': hdd['CapacityGB'],
-                    'is_primary': hdd['IsPrimary']
+                'name': hdd['HddName'],
+                'capacity_gb': hdd['CapacityGB'],
+                'is_primary': hdd['IsPrimary']
                 } for hdd in data['DiskDrives']],
             'description': data['Description']
         }
@@ -350,7 +350,7 @@ class OktawaveApi(object):
                 'creation_date': self.clients.parse_date(disk['ClientHdd']['CreationDate']),
                 'creation_user_name': disk['ClientHdd']['CreationUser']['FullName'],
                 'is_primary': disk['IsPrimary']
-            } for disk in data['DiskDrives']],
+                } for disk in data['DiskDrives']],
             'ips': [{
                 'ipv4': ip['Address'],
                 'netmask': ip['NetMask'],
@@ -361,7 +361,7 @@ class OktawaveApi(object):
                 'status': self._dict_item_name(ip['IPStatus']),
                 'last_change_date': self.clients.parse_date(ip['LastChangeDate']),
                 'macaddr': ip['MacAddress'],
-            } for ip in data['IPs']],
+                } for ip in data['IPs']],
             'vlans': [],
         }
         if data['PrivateIpv4']:
@@ -369,7 +369,7 @@ class OktawaveApi(object):
                 'ipv4': vlan['PrivateIpAddress'],
                 'creation_date': self.clients.parse_date(vlan['CreationDate']),
                 'macaddr': vlan['MacAddress'],
-            } for vlan in data['PrivateIpv4']]
+                } for vlan in data['PrivateIpv4']]
 
         return res
 
@@ -437,7 +437,7 @@ class OktawaveApi(object):
                 vms = [{
                     'id': vm['VirtualMachine']['VirtualMachineId'],
                     'name': vm['VirtualMachine']['VirtualMachineName'],
-                } for vm in disk['VirtualMachineHdds']]
+                    } for vm in disk['VirtualMachineHdds']]
             yield {
                 'id': disk['ClientHddId'],
                 'name': disk['HddName'],
@@ -478,7 +478,7 @@ class OktawaveApi(object):
         disk_mod = self._ovs_disk_mod(disk)
         if oci_id in disk_mod['VirtualMachineIds']:
             raise OktawaveOVSMappedError()
-	disk_mod['VirtualMachineIds'].append('oci_id')
+        disk_mod['VirtualMachineIds'].append('oci_id')
 
         res = self.clients.call('UpdateDisk', clientHdd=disk_mod, clientId=self.client_id)
         if not res:
@@ -495,7 +495,7 @@ class OktawaveApi(object):
         if oci_id not in disk_mod['VirtualMachineIds']:
             raise OktawaveOVSUnmappedError()
 
-	disk_mod['VirtualMachineIds'].remove(oci_id)
+        disk_mod['VirtualMachineIds'].remove(oci_id)
 
         res = self.clients.call('UpdateDisk', clientHdd=disk_mod, clientId=self.client_id)
         if not res:
@@ -506,9 +506,9 @@ class OktawaveApi(object):
     def ORDB_List(self):
         """Lists databases"""
         self._logon()
-	sp = {
-	    'ClientId': self.client_id,
-	}
+        sp = {
+            'ClientId': self.client_id,
+        }
         data = self.clients.call('GetDatabaseInstances', searchParams=sp)
         for db in data['_results']:
             yield {
@@ -541,16 +541,16 @@ class OktawaveApi(object):
         else:
             self.clients.call(
                 'DeleteDatabase', virtualMachineId=oci_id, databaseName=db_name,
-	        clientId=self.client_id)
+                clientId=self.client_id)
 
     ORDB_Logs = OCI_Logs
 
     def ORDB_LogicalDatabases(self, oci_id):
         """Shows logical databases"""
         self._logon()
-	sp = {
-	    'ClientId': self.client_id,
-	}
+        sp = {
+            'ClientId': self.client_id,
+        }
         data = self.clients.call('GetDatabaseInstances', searchParams=sp)
 
         for vm in data['_results']:
@@ -594,27 +594,27 @@ class OktawaveApi(object):
         """Creates a new logical database within an instance"""
         self._logon()
         self.clients.call(
-	    'CreateDatabase',
-	    virtualMachineId=oci_id,
-	    databaseName=name,
-	    encodingDictId=DICT[encoding.upper() + '_ENCODING'],
-	    clientId=self.client_id)
+            'CreateDatabase',
+            virtualMachineId=oci_id,
+            databaseName=name,
+            encodingDictId=DICT[encoding.upper() + '_ENCODING'],
+            clientId=self.client_id)
 
     def ORDB_BackupLogicalDatabase(self, oci_id, name):
         """Creates a backup of logical database"""
         self._logon()
         self.clients.call('BackupDatabase', virtualMachineId=oci_id,
-	                  databaseName=name, clientId=self.client_id)
+                          databaseName=name, clientId=self.client_id)
 
     def ORDB_MoveLogicalDatabase(self, oci_id_from, oci_id_to, name):
         """Moves a logical database"""
         self._logon()
         self.clients.call(
             'MoveDatabase',
-	    virtualMachineIdFrom=oci_id_from,
-	    virtualMachineIdTo=oci_id_to,
-	    databaseName=name,
-	    clientId=self.client_id)
+            virtualMachineIdFrom=oci_id_from,
+            virtualMachineIdTo=oci_id_to,
+            databaseName=name,
+            clientId=self.client_id)
 
     def ORDB_Backups(self):
         """Lists logical database backups"""
@@ -629,7 +629,7 @@ class OktawaveApi(object):
                 'file_name': b['Name'],
                 'type': 'MySQL',
                 'path': b['ContainerName'] +
-                    "/" + b['FullPath']
+                "/" + b['FullPath']
             }
 
         for b in pgsql_data:
@@ -637,7 +637,7 @@ class OktawaveApi(object):
                 'file_name': b['Name'],
                 'type': 'PostgreSQL',
                 'path': b['ContainerName'] +
-                    "/" + b['FullPath']
+                "/" + b['FullPath']
             }
 
     def ORDB_RestoreLogicalDatabase(self, oci_id, name, backup_file):
@@ -645,10 +645,9 @@ class OktawaveApi(object):
         self._logon()
         self.clients.call('RestoreDatabase', virtualMachineId=oci_id,
                           databaseName=name, backupFileName=backup_file,
-	                  clientId=self.client_id)
+                          clientId=self.client_id)
 
 class OCSConnection(Connection):
     def __init__(self, username, password):
         super(OCSConnection, self).__init__(
             'https://ocs-pl.oktawave.com/auth/v1.0', username, password)
-
