@@ -26,13 +26,13 @@ DICT = {
 }
 
 class CloneType(object):
-    Runtime = 0
-    AbsoluteCopy = 1
+    Runtime = 869
+    AbsoluteCopy = 870
 
 class TemplateType(object):
-    vApps = 0
-    Machine = 1
-    Database = 2
+    vApps = 173
+    Machine = 174
+    Database = 324
 
 class PowerStatus(object):
     PowerOn = 86
