@@ -5,7 +5,7 @@ Oktawave-CLI version 0.7.* README
 
 If you are installing oktawave-cli from source, install the following Python
 module dependencies first:
-- suds
+- requests
 - swiftclient
 - argparse
 - setproctitle
@@ -15,9 +15,6 @@ To install oktawave-api use:
 python setup.py build
 python setup.py install
 (you need to have python distutils installed to do this)
-
-Note: if you are installing from a package (deb or rpm), the post-install script
-will try to download and install the missing packages.
 
 
 2. Authentication
@@ -86,6 +83,10 @@ You can also use this in interactive mode.
 6. Contributing
 
 The development of oktawave-cli takes place at GitHub:
+
+	https://github.com/gnosek/oktawave-cli
+
+Upstream version by Oktawave lives at:
 
 	https://github.com/oktawave-code/oktawave-cli
 
