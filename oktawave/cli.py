@@ -172,10 +172,11 @@ class OktawaveCli(object):
                 op['type'],
                 op['user_name'],
                 op['status'],
+                ' '.join(op['parameters'])
             ]
 
         self._print_table(
-            ['Time', 'Operation type', 'User', 'Status'],
+            ['Time', 'Operation type', 'User', 'Status', 'Parameters'],
             logs, fmt)
 
     def OCI_Settings(self, args):

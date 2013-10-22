@@ -354,7 +354,8 @@ class OktawaveApi(object):
                 'time': self.clients.parse_date(op['CreationDate']),
                 'type': self._dict_item_name(op['OperationType']),
                 'user_name': op['CreationUser']['FullName'],
-                'status': self._dict_item_name(op['Status'])
+                'status': self._dict_item_name(op['Status']),
+                'parameters': [item['Value'] for item in op['Parameters']],
             }
 
     def OCI_Settings(self, oci_id):
