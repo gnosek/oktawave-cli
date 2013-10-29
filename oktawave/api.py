@@ -509,7 +509,7 @@ class OktawaveApi(object):
         disk_mod = self._ovs_disk_mod(disk)
         if oci_id in disk_mod['VirtualMachineIds']:
             raise OktawaveOVSMappedError()
-        disk_mod['VirtualMachineIds'].append('oci_id')
+        disk_mod['VirtualMachineIds'].append(oci_id)
 
         res = self.clients.call('UpdateDisk', clientHdd=disk_mod, clientId=self.client_id)
         if not res:
