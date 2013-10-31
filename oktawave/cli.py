@@ -364,7 +364,7 @@ class OktawaveCli(object):
                 '%d GB' % disk['capacity_gb'],
                 '%d GB' % disk['used_gb'],
                 'Yes' if disk['is_shared'] else 'No',
-                ', '.join(fmt_mapping(vm) for vm in disk['vms']) if disk['vms'] else 'None'
+                '\n'.join(fmt_mapping(vm) for vm in disk['vms']) if disk['vms'] else ''
             ]
 
         self._print_table(
