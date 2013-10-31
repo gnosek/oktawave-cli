@@ -47,6 +47,9 @@ def simple_vm_subparsers(data):
 def simple_db_subparsers(data):
     return simple_subparsers(data, 'Database virtual machine ID, as returned by "ORDB List"')
 
+def simple_container_subparsers(data):
+    return simple_subparsers(data, 'Container ID, as returned by "Container List"')
+
 
 if(__name__ == '__main__'):
     # Change proctitle to prevent password leak
@@ -229,6 +232,47 @@ if(__name__ == '__main__'):
         ['RunningJobs', 'Show active operations', []],
         ['Users', 'Show users', []]
     ])
+    container_parser = namespace_parser.add_parser('Container', help='Commands related to containers')
+    container_parsers = container_parser.add_subparsers(title='Container commands', dest='command')
+    parsers['Containers'] = container_parsers
+    container_params = [
+            ['name', 'Container name'],
+            ['--load-balancer', 'Enable load balancer', {'action' : 'store_true'}],
+            ['--service', 'Service (default: "Port")', {
+                'choices' : ['HTTP', 'HTTPS', 'SMTP', 'MySQL', 'Port'],
+                'default' : 'Port'}],
+            ['--port', 'Port (only if --service=Port)', {'type' : int}],
+            ['--proxy-cache', 'Enable proxy cache', {'action' : 'store_true'}],
+            ['--use-ssl', 'Enable SSL', {'action' : 'store_true'}],
+            ['--healthcheck', 'Enable healthcheck', {'action' : 'store_true'}],
+            ['--mysql-master-id', 'ID of the MySQL master OCI (it will be added to the container)', {'type' : int}],
+            ['--session-persistence', 'Session persistence type (default: "none")', {
+                'choices' : ['none', 'by_source_ip', 'by_cookie'],
+                'default' : 'none'}],
+            ['--load-balancer-algorithm', 'Load balancer algorithm (default: "least_response_time")', {
+                'choices' : ['least_response_time', 'least_connections', 'source_ip_hash', 'round_robin'],
+                'default' : 'least_response_time'}],
+            ['--ip-version', 'IP version (default: "4")', {
+                'choices' : ['4', '6', 'both'],
+                'default' : '4'}]]
+    add_subparsers(container_parsers, [
+        ['List', 'List containers', []],
+        ['RemoveOCI', 'Remove an OCI from container', [
+            ['id', 'Container ID', {'type' : int}],
+            ['oci_id', 'OCI ID', {'type' : int}]
+        ]],
+        ['AddOCI', 'Add an OCI to container', [
+            ['id', 'Container ID', {'type' : int}],
+            ['oci_id', 'OCI ID', {'type' : int}]
+        ]],
+        ['Create', 'Create a new container', container_params],
+        ['Edit', 'Modify an existing container. Takes the same options a "Container Create" and the container\'s ID.', [
+            ['id', 'Container ID', {'type' : int}],
+        ] + container_params],
+        ] + simple_container_subparsers([
+            ['Get', 'Display a container\'s information'],
+            ['Delete', 'Delete a container']
+        ]))
     # adding dummy "---" help string to found methods that are not
     # documented yet (this gotta go when finished, or probably should be done in
     # debug mode only)

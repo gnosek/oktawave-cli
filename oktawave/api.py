@@ -171,6 +171,17 @@ class OktawaveApi(object):
         }
         return disk_mod
 
+    def _container_simple(self, container_id):
+        """Fetches a container's information using GetContainersSimpleWithVM"""
+        self._logon()
+        cs = self.clients.call('GetContainersSimpleWithVM', clientId=self.client_id)
+        for c in cs:
+            self._d([c, container_id])
+            if str(c['ContainerId']) == str(container_id):
+                return c
+        raise OktawaveContainerNotFoundError()
+
+
     # API methods below ###
 
     # General / Account ###
@@ -706,7 +717,140 @@ class OktawaveApi(object):
                           databaseName=name, backupFileName=backup_file,
                           clientId=self.client_id)
 
+
+    def Container_List(self):
+        """Lists client's containers' basic info"""
+        self._logon()
+        containers = self.clients.call('GetContainers', clientId=self.client_id)
+        for c in containers:
+            yield {
+                'id': c['ContainerId'],
+                'name': c['ContainerName'],
+                'vms': c['VirtualMachineCount']
+            }
+
+    def Container_Get(self, container_id):
+        """Displays a container's information"""
+        self._logon()
+        c = self.clients.call('GetContainer', containerId=container_id)
+        res = {
+            'autoscaling': self._dict_item_name(c['AutoScalingType']),
+            'id': c['ContainerId'],
+            'name': c['ContainerName'],
+            'healthcheck': c['IsServiceCheckAvailable'],
+            'ip_version': self._dict_item_name(c['IPVersion']),
+            'load_balancer': c['IsLoadBalancer'],
+            'master_service_id': c['MasterServiceId'],
+            'master_service_name': c['MasterServiceName'],
+            'proxy_cache': c['IsProxyCache'],
+            'ssl': c['IsSSLUsed'],
+            'load_balancer_algorithm': self._dict_item_name(c['LoadBalancerAlgorithm']),
+            'port': c['PortNumber'],
+            'schedulers': c['SchedulersCount'],
+            'service': self._dict_item_name(c['Service']),
+            'session_type': self._dict_item_name(c['SessionType']),
+            'vms': c['VirtualMachineCount'],
+        }
+        return res
+
+    def Container_RemoveOCI(self, container_id, oci_id):
+        """Removes an instance from container"""
+        self._logon()
+        c_simple = self._container_simple(container_id)
+        found = False
+        for vm in c_simple['VirtualMachines']:
+            if vm['VirtualMachineId'] == oci_id:
+                found = True
+                break
+        if not found:
+            raise OktawaveOCINotInContainer()
+        vm_ids = [vm['VirtualMachineId']
+            for vm in c_simple['VirtualMachines']
+            if vm['VirtualMachineId'] != oci_id]
+        c = self.clients.call('GetContainer', containerId=container_id)
+        self._d(vm_ids)
+        self.clients.call('UpdateContainer', container=c, virtualMachinesId=vm_ids)
+
+    def Container_AddOCI(self, container_id, oci_id):
+        """Adds an instance to container"""
+        self._logon()
+        c_simple = self._container_simple(container_id)
+        found = False
+        for vm in c_simple['VirtualMachines']:
+            if vm['VirtualMachineId'] == oci_id:
+                found = True
+                break
+        if found:
+            raise OktawaveOCIInContainer()
+        vm_ids = [vm['VirtualMachineId']
+            for vm in c_simple['VirtualMachines']] + [oci_id]
+        c = self.clients.call('GetContainer', containerId=container_id)
+        self.clients.call('UpdateContainer', container=c, virtualMachinesId=vm_ids)
+
+    def Container_Delete(self, container_id):
+        self._logon()
+        self.clients.call('DeleteContainers', containerIds=[container_id],
+            clientId=self.client_id)
+
+    def _container_service_id(self, service):
+        services = {'HTTP' : 43, 'HTTPS' : 44, 'SMTP' : 45, 'MySQL' : 287, 'Port' : 155}
+        return services[service]
+
+    def _load_balancer_algorithm_id(self, algorithm):
+        algorithms = {'least_response_time' : 282, 'least_connections' : 281, 'source_ip_hash' : 288, 'round_robin' : 612}
+        return algorithms[algorithm]
+
+    def _session_type_id(self, s_type):
+        s_types = {'none' : 47, 'by_source_ip' : 46, 'by_cookie' : 280}
+        return s_types[s_type]
+
+    def _ip_version_id(self, version):
+        versions = {'4' : 115, '6' : 116, 'both' : 565}
+        return versions[version]
+
+    def Container_Create(
+            self, name, load_balancer, service, port,
+            proxy_cache, ssl, healthcheck, master_id, session, lb_algorithm, ip_version):
+        self._logon()
+        vm_ids = [] if master_id is None else [master_id]
+        result = self.clients.call('CreateContainer', container = {
+            'OwnerClientId' : self.client_id,
+            'ContainerName' : name,
+            'IsLoadBalancer' : load_balancer,
+            'Service' : {'DictionaryItemId' : self._container_service_id(service)},
+            'LoadBalancerAlgorithm' : {'DictionaryItemId' : self._load_balancer_algorithm_id(lb_algorithm)},
+            'IsSSLUsed' : ssl,
+            'IsProxyCache' : proxy_cache,
+            'MasterServiceId' : master_id,
+            'PortNumber' : port,
+            'SessionType' : {'DictionaryItemId' : self._session_type_id(session)},
+            'IPVersion' : {'DictionaryItemId' : self._ip_version_id(ip_version)}
+        }, virtualMachinesId = vm_ids)
+        return result
+
+    # TODO: allow to change only selected parameters, add more validation
+    # without relying on the UpdateContainer API method.
+    def Container_Edit(
+            self, container_id, name, load_balancer, service, port,
+            proxy_cache, ssl, healthcheck, master_id, session, lb_algorithm, ip_version):
+        self._logon()
+        c = self.clients.call('GetContainer', containerId=container_id)
+        c_simple = self._container_simple(container_id)
+        c['ContainerName'] = name
+        c['IsLoadBalancer'] = load_balancer
+        c['Service'] = {'DictionaryItemId' : self._container_service_id(service)}
+        c['LoadBalancerAlgorithm'] = {'DictionaryItemId' : self._load_balancer_algorithm_id(lb_algorithm)}
+        c['IsSSLUsed'] = ssl
+        c['IsProxyCache'] = proxy_cache
+        c['MasterServiceId'] = master_id
+        c['PortNumber'] = port
+        c['SessionType'] = {'DictionaryItemId' : self._session_type_id(session)}
+        c['IPVersion'] = {'DictionaryItemId' : self._ip_version_id(ip_version)}
+        self.clients.call('UpdateContainer', container=c, virtualMachinesId=c_simple['VirtualMachines'])
+
+
 class OCSConnection(Connection):
     def __init__(self, username, password):
         super(OCSConnection, self).__init__(
             'https://ocs-pl.oktawave.com/auth/v1.0', username, password)
+

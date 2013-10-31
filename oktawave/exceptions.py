@@ -27,3 +27,12 @@ class OktawaveOVSTooSmallError(ValueError):
 
 class OktawaveORDBInvalidTemplateError(ValueError):
     pass
+
+class OktawaveContainerNotFoundError(ValueError):
+    pass
+
+class OktawaveOCIInContainer(ValueError):
+    pass
+
+class OktawaveOCINotInContainer(ValueError):
+    pass
