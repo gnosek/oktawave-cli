@@ -4,6 +4,7 @@ from oktawave.api import (
     DICT as OktawaveConstants,
     CloneType,
     TemplateType,
+    PowerStatus
 )
 from oktawave.exceptions import *
 from oktawave.printer import Printer
@@ -339,6 +340,22 @@ class OktawaveCli(object):
     def OVS_List(self, args):
         """Lists disks"""
         disks = self.api.OVS_List()
+
+        def fmt_mapping(mapping):
+            ovs_id = mapping['id']
+            name = mapping['name']
+            if mapping['primary']:
+                tags = 'primary',
+            else:
+                tags = ()
+            if mapping['vm_status'].status == PowerStatus.PowerOn:
+                tags += 'powered on',
+            if tags:
+                tag = ': ' + ', '.join(tags)
+            else:
+                tag = ''
+            return u'{0} ({1}{2})'.format(ovs_id, name, tag)
+
         def fmt(disk):
             return [
                 disk['id'],
@@ -347,7 +364,7 @@ class OktawaveCli(object):
                 '%d GB' % disk['capacity_gb'],
                 '%d GB' % disk['used_gb'],
                 'Yes' if disk['is_shared'] else 'No',
-                ', '.join('%(id)d (%(name)s)' % vm for vm in disk['vms']) if disk['vms'] else 'None'
+                ', '.join(fmt_mapping(vm) for vm in disk['vms']) if disk['vms'] else 'None'
             ]
 
         self._print_table(

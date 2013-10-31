@@ -468,6 +468,8 @@ class OktawaveApi(object):
                 vms = [{
                     'id': vm['VirtualMachine']['VirtualMachineId'],
                     'name': vm['VirtualMachine']['VirtualMachineName'],
+                    'primary': vm['IsPrimary'],
+                    'vm_status': PowerStatus(vm['VirtualMachine']['StatusDictId']),
                     } for vm in disk['VirtualMachineHdds']]
             yield {
                 'id': disk['ClientHddId'],
