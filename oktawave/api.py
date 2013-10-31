@@ -160,6 +160,12 @@ class OktawaveApi(object):
         vms = [
             vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds']]
 
+        lock_vms = [
+            vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds'] if
+            vm['VirtualMachine']['StatusDictId'] == PowerStatus.PowerOn or
+            not vm['IsPrimary']
+        ]
+
         disk_mod = {
             'CapacityGB': disk['CapacityGB'],
             'ClientHddId': disk['ClientHddId'],
@@ -168,6 +174,7 @@ class OktawaveApi(object):
             'HddStandardId': disk['HddStandard']['DictionaryItemId'],
             'PaymentTypeId': disk['PaymentType']['DictionaryItemId'],
             'VirtualMachineIds': vms,
+            'LockVirtualMachineIds': lock_vms,
         }
         return disk_mod
 
@@ -389,6 +396,7 @@ class OktawaveApi(object):
             'name': data['VirtualMachineName'],
             'vm_class_name': self._dict_item_name(data['VMClass']),
             'disks': [{
+                'id': disk['ClientHddId'],
                 'name': disk['ClientHdd']['HddName'],
                 'capacity_gb': disk['ClientHdd']['CapacityGB'],
                 'creation_date': self.clients.parse_date(disk['ClientHdd']['CreationDate']),
@@ -479,6 +487,8 @@ class OktawaveApi(object):
                 vms = [{
                     'id': vm['VirtualMachine']['VirtualMachineId'],
                     'name': vm['VirtualMachine']['VirtualMachineName'],
+                    'primary': vm['IsPrimary'],
+                    'vm_status': PowerStatus(vm['VirtualMachine']['StatusDictId']),
                     } for vm in disk['VirtualMachineHdds']]
             yield {
                 'id': disk['ClientHddId'],
@@ -561,7 +571,7 @@ class OktawaveApi(object):
             raise OktawaveOVSNotFoundError()
 
         disk_mod = self._ovs_disk_mod(disk)
-        if disk_mod['VirtualMachineIds']:
+        if disk_mod['LockVirtualMachineIds']:
             raise OktawaveOVSMappedError()
 
         if disk_mod['CapacityGB'] > capacity_gb:
