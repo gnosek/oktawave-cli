@@ -385,6 +385,7 @@ class OktawaveApi(object):
             'name': data['VirtualMachineName'],
             'vm_class_name': self._dict_item_name(data['VMClass']),
             'disks': [{
+                'id': disk['ClientHddId'],
                 'name': disk['ClientHdd']['HddName'],
                 'capacity_gb': disk['ClientHdd']['CapacityGB'],
                 'creation_date': self.clients.parse_date(disk['ClientHdd']['CreationDate']),

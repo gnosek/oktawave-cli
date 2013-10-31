@@ -206,6 +206,7 @@ class OktawaveCli(object):
 
         def fmt_disk(disk):
             return [
+                disk['id'],
                 disk['name'],
                 disk['capacity_gb'],
                 disk['creation_date'],
@@ -214,7 +215,7 @@ class OktawaveCli(object):
             ]
         self.p._print("Hard disks")
         self._print_table(
-            ['Name', 'Capacity (GB)', 'Created at', 'Created by', 'Primary'],
+            ['ID', 'Name', 'Capacity (GB)', 'Created at', 'Created by', 'Primary'],
             settings['disks'], fmt_disk)
 
         def fmt_ip(ip):
