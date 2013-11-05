@@ -599,12 +599,20 @@ class OktawaveCli(object):
     def Container_Create(self, args):
         """Creates a new container"""
         self.api._d(args)
-        container_id = self.api.Container_Create(args.name, args.load_balancer, args.service, args.port, args.proxy_cache, args.use_ssl, args.healthcheck, args.mysql_master_id, args.session_persistence, args.load_balancer_algorithm, args.ip_version)
+        container_id = self.api.Container_Create(
+            args.name, args.load_balancer, args.service, args.port, args.proxy_cache,
+            args.use_ssl, args.healthcheck, args.mysql_master_id, args.session_persistence,
+            args.load_balancer_algorithm, args.ip_version, args.autoscaling
+        )
         print "OK, new container ID: " + str(container_id) + "."
 
     def Container_Edit(self, args):
         """Modifies a container."""
         self.api._d(args)
-        self.api.Container_Edit(args.id, args.name, args.load_balancer, args.service, args.port, args.proxy_cache, args.use_ssl, args.healthcheck, args.mysql_master_id, args.session_persistence, args.load_balancer_algorithm, args.ip_version)
+        self.api.Container_Edit(
+            args.id, args.name, args.load_balancer, args.service, args.port, args.proxy_cache,
+            args.use_ssl, args.healthcheck, args.mysql_master_id, args.session_persistence,
+            args.load_balancer_algorithm, args.ip_version, args.autoscaling
+        )
         print "OK"
 

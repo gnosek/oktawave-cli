@@ -254,7 +254,10 @@ if(__name__ == '__main__'):
                 'default' : 'least_response_time'}],
             ['--ip-version', 'IP version (default: "4")', {
                 'choices' : ['4', '6', 'both'],
-                'default' : '4'}]]
+                'default' : '4'}],
+            ['--autoscaling', 'Autoscaling (default: "off"', {
+                'choices' : ['on', 'off'],
+                'default' : 'off'}]]
     add_subparsers(container_parsers, [
         ['List', 'List containers', []],
         ['RemoveOCI', 'Remove an OCI from container', [

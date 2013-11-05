@@ -818,9 +818,13 @@ class OktawaveApi(object):
         versions = {'4' : 115, '6' : 116, 'both' : 565}
         return versions[version]
 
+    def _autoscaling_id(self, autoscaling):
+        types = {'on' : 185, 'off' : 184}
+        return types[autoscaling]
+
     def Container_Create(
-            self, name, load_balancer, service, port,
-            proxy_cache, ssl, healthcheck, master_id, session, lb_algorithm, ip_version):
+            self, name, load_balancer, service, port, proxy_cache, ssl,
+            healthcheck, master_id, session, lb_algorithm,ip_version, autoscaling):
         self._logon()
         vm_ids = [] if master_id is None else [master_id]
         result = self.clients.call('CreateContainer', container = {
@@ -834,15 +838,16 @@ class OktawaveApi(object):
             'MasterServiceId' : master_id,
             'PortNumber' : port,
             'SessionType' : {'DictionaryItemId' : self._session_type_id(session)},
-            'IPVersion' : {'DictionaryItemId' : self._ip_version_id(ip_version)}
+            'IPVersion' : {'DictionaryItemId' : self._ip_version_id(ip_version)},
+            'AutoScalingType' : {'DictionaryItemId' : self._autoscaling_id(autoscaling)}
         }, virtualMachinesId = vm_ids)
         return result
 
     # TODO: allow to change only selected parameters, add more validation
     # without relying on the UpdateContainer API method.
     def Container_Edit(
-            self, container_id, name, load_balancer, service, port,
-            proxy_cache, ssl, healthcheck, master_id, session, lb_algorithm, ip_version):
+            self, container_id, name, load_balancer, service, port, proxy_cache, ssl,
+            healthcheck, master_id, session, lb_algorithm, ip_version, autoscaling):
         self._logon()
         c = self.clients.call('GetContainer', containerId=container_id)
         c_simple = self._container_simple(container_id)
@@ -856,6 +861,9 @@ class OktawaveApi(object):
         c['PortNumber'] = port
         c['SessionType'] = {'DictionaryItemId' : self._session_type_id(session)}
         c['IPVersion'] = {'DictionaryItemId' : self._ip_version_id(ip_version)}
+        c['AutoScalingType'] = {'DictionaryItemId' : self._autoscaling_id(autoscaling)}
+        c['AutoScalingTypeDictId'] = self._autoscaling_id(autoscaling)
+        self._d(c)
         self.clients.call('UpdateContainer', container=c, virtualMachinesId=c_simple['VirtualMachines'])
 
 
