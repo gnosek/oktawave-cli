@@ -570,14 +570,18 @@ class OktawaveCli(object):
             ['Load balancer', 'Yes' if c['load_balancer'] else 'No'],
             ['Load balancer algorithm', c['load_balancer_algorithm']],
             ['Proxy cache', 'Yes' if c['proxy_cache'] else 'No'],
-            ['Master OCI (MySQL)', c['master_service_name'] + ' (' + str(c['master_service_id']) + ')'
-                if c['master_service_id'] is not None else 'None'],
             ['SSL enabled', 'Yes' if c['ssl'] else 'No'],
             ['Service', c['service'] + ' (' + str(c['port']) + ')' if c['service'] == 'Port' else c['service']],
             ['Session type', c['session_type']],
             ['Schedulers', c['schedulers']],
             ['Virtual machines', c['vms']],
         ])
+        if c['master_service_id'] is not None:
+            base_tab.extend([['Master OCI (MySQL)', c['master_service_name'] + ' (' + str(c['master_service_id']) + ')']])
+        if c['db_user'] is not None:
+            base_tab.extend([['Database user', c['db_user']]])
+        if c['db_password'] is not None:
+            base_tab.extend([['Database password', c['db_password']]])
         self.p._print('\nBasic container settings')
         self.p.print_table(base_tab)
 

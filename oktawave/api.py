@@ -760,6 +760,8 @@ class OktawaveApi(object):
             'service': self._dict_item_name(c['Service']),
             'session_type': self._dict_item_name(c['SessionType']),
             'vms': c['VirtualMachineCount'],
+            'db_user': c['DatabaseUserLogin'],
+            'db_password': c['DatabaseUserPassword']
         }
         return res
 
