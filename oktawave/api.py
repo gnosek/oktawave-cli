@@ -866,7 +866,8 @@ class OktawaveApi(object):
         c['AutoScalingTypeDictId'] = self._autoscaling_id(autoscaling)
         c['IsServiceCheckAvailable'] = healthcheck
         self._d(c)
-        self.clients.call('UpdateContainer', container=c, virtualMachinesId=c_simple['VirtualMachines'])
+        self.clients.call('UpdateContainer', container=c,
+            virtualMachinesId=[vm['VirtualMachineId'] for vm in c_simple['VirtualMachines']])
 
 
 class OCSConnection(Connection):
