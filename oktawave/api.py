@@ -839,7 +839,8 @@ class OktawaveApi(object):
             'PortNumber' : port,
             'SessionType' : {'DictionaryItemId' : self._session_type_id(session)},
             'IPVersion' : {'DictionaryItemId' : self._ip_version_id(ip_version)},
-            'AutoScalingType' : {'DictionaryItemId' : self._autoscaling_id(autoscaling)}
+            'AutoScalingType' : {'DictionaryItemId' : self._autoscaling_id(autoscaling)},
+            'IsServiceCheckAvailable' : healthcheck
         }, virtualMachinesId = vm_ids)
         return result
 
@@ -863,6 +864,7 @@ class OktawaveApi(object):
         c['IPVersion'] = {'DictionaryItemId' : self._ip_version_id(ip_version)}
         c['AutoScalingType'] = {'DictionaryItemId' : self._autoscaling_id(autoscaling)}
         c['AutoScalingTypeDictId'] = self._autoscaling_id(autoscaling)
+        c['IsServiceCheckAvailable'] = healthcheck
         self._d(c)
         self.clients.call('UpdateContainer', container=c, virtualMachinesId=c_simple['VirtualMachines'])
 
