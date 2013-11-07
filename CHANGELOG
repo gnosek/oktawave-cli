@@ -26,3 +26,16 @@
 - fixed OCS authentication in interactive mode (failed with credentials were read from the configuration file)
 - added option oci_class to OCI Create
 - fixed python dependencies in setup.py
+
+0.7.6
+- added methods to resize and change tier of OVS disks
+- added OCI ChangeClass method
+- fixed OCI Create SOAP call parameters order
+- fixed ORDB Create method and added optional oci_class parameter
+- fixed error in List methods with no OCI/OVS/ORDB
+
+0.7.7
+- fixed OVS Create parameters
+
+0.7.8
+- updated for recent API changes

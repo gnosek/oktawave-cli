@@ -545,3 +545,78 @@ class OktawaveCli(object):
         """Restores a database from backup"""
         self.api.ORDB_RestoreLogicalDatabase(args.id, args.name, args.backup_file)
         print "OK"
+
+
+    def Container_List(self, args):
+        """Lists client's containers"""
+        containers = self.api.Container_List()
+        def fmt(c):
+            return [c['id'], c['name'], c['vms']]
+
+        self._print_table(
+            ['Container ID', 'Name', 'VMs'], containers, fmt)
+
+    def Container_Get(self, args):
+        """Displays a container's information"""
+        c = self.api.Container_Get(args.id)
+        
+        base_tab = [['Key', 'Value']]
+        base_tab.extend([
+            ['ID', c['id']],
+            ['Name', c['name']],
+            ['Autoscaling', c['autoscaling']],
+            ['Healthcheck', 'Yes' if c['healthcheck'] else 'No'],
+            ['IP version', c['ip_version']],
+            ['Load balancer', 'Yes' if c['load_balancer'] else 'No'],
+            ['Load balancer algorithm', c['load_balancer_algorithm']],
+            ['Proxy cache', 'Yes' if c['proxy_cache'] else 'No'],
+            ['SSL enabled', 'Yes' if c['ssl'] else 'No'],
+            ['Service', c['service'] + ' (' + str(c['port']) + ')' if c['service'] == 'Port' else c['service']],
+            ['Session type', c['session_type']],
+            ['Schedulers', c['schedulers']],
+            ['Virtual machines', c['vms']],
+        ])
+        if c['master_service_id'] is not None:
+            base_tab.extend([['Master OCI (MySQL)', c['master_service_name'] + ' (' + str(c['master_service_id']) + ')']])
+        if c['db_user'] is not None:
+            base_tab.extend([['Database user', c['db_user']]])
+        if c['db_password'] is not None:
+            base_tab.extend([['Database password', c['db_password']]])
+        self.p._print('\nBasic container settings')
+        self.p.print_table(base_tab)
+
+    def Container_RemoveOCI(self, args):
+        """Removes an OCI from a container"""
+        self.api.Container_RemoveOCI(args.id, args.oci_id)
+        print "OK"
+
+    def Container_AddOCI(self, args):
+        """Adds an OCI to a container"""
+        self.api.Container_AddOCI(args.id, args.oci_id)
+        print "OK"
+
+    def Container_Delete(self, args):
+        """Deletes a container"""
+        self.api.Container_Delete(args.id)
+        print "OK"
+
+    def Container_Create(self, args):
+        """Creates a new container"""
+        self.api._d(args)
+        container_id = self.api.Container_Create(
+            args.name, args.load_balancer, args.service, args.port, args.proxy_cache,
+            args.use_ssl, args.healthcheck, args.mysql_master_id, args.session_persistence,
+            args.load_balancer_algorithm, args.ip_version, args.autoscaling
+        )
+        print "OK, new container ID: " + str(container_id) + "."
+
+    def Container_Edit(self, args):
+        """Modifies a container."""
+        self.api._d(args)
+        self.api.Container_Edit(
+            args.id, args.name, args.load_balancer, args.service, args.port, args.proxy_cache,
+            args.use_ssl, args.healthcheck, args.mysql_master_id, args.session_persistence,
+            args.load_balancer_algorithm, args.ip_version, args.autoscaling
+        )
+        print "OK"
+
