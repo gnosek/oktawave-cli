@@ -211,11 +211,12 @@ class OktawaveCli(object):
                 disk['capacity_gb'],
                 disk['creation_date'],
                 disk['creation_user_name'],
-                'Yes' if disk['is_primary'] else 'No'
+                'Yes' if disk['is_primary'] else 'No',
+                'Yes' if disk['is_shared'] else 'No'
             ]
         self.p._print("Hard disks")
         self._print_table(
-            ['ID', 'Name', 'Capacity (GB)', 'Created at', 'Created by', 'Primary'],
+            ['ID', 'Name', 'Capacity (GB)', 'Created at', 'Created by', 'Primary', 'Shared'],
             settings['disks'], fmt_disk)
 
         def fmt_ip(ip):

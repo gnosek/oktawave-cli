@@ -401,7 +401,8 @@ class OktawaveApi(object):
                 'capacity_gb': disk['ClientHdd']['CapacityGB'],
                 'creation_date': self.clients.parse_date(disk['ClientHdd']['CreationDate']),
                 'creation_user_name': disk['ClientHdd']['CreationUser']['FullName'],
-                'is_primary': disk['IsPrimary']
+                'is_primary': disk['IsPrimary'],
+                'is_shared': disk['ClientHdd']['IsShared']
                 } for disk in data['DiskDrives']],
             'ips': [{
                 'ipv4': ip['Address'],
