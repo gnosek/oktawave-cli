@@ -9,6 +9,7 @@ from oktawave.api import (
 from oktawave.exceptions import *
 from oktawave.printer import Printer
 import sys
+import os
 
 class OktawaveCli(object):
 
@@ -273,6 +274,32 @@ class OktawaveCli(object):
         """Clones a VM"""
         clonetype = getattr(CloneType, args.clonetype)
         self.api.OCI_Clone(args.id, args.name, clonetype)
+
+    def _oci_ip(self, oci_id):
+        settings = self.api.OCI_Settings(oci_id)
+        return settings['ips'][0]['ipv4']
+
+    def _oci_default_password(self, oci_id):
+        logs = self.api.OCI_Logs(oci_id)
+        for entry in logs:
+            if entry['type'] == 'Instance access details':
+                return entry['parameters'][0]
+
+    def OCI_ping(self, args):
+        ip = self._oci_ip(args.id)
+        os.execvp('ping', ('ping', ip)+tuple(args.exec_args))
+
+    def OCI_ssh(self, args):
+        ip = self._oci_ip(args.id)
+        print 'Default OCI password: %s' % self._oci_default_password(args.id)
+        remote = '%s@%s' % (args.user, ip)
+        os.execvp('ssh', ('ssh', remote)+tuple(args.exec_args))
+
+    def OCI_ssh_copy_id(self, args):
+        ip = self._oci_ip(args.id)
+        print 'Default OCI password: %s' % self._oci_default_password(args.id)
+        remote = '%s@%s' % (args.user, ip)
+        os.execvp('ssh-copy-id', ('ssh-copy-id', remote)+tuple(args.exec_args))
 
     def _ocs_split_params(self, args):
         container = args.container
@@ -560,7 +587,7 @@ class OktawaveCli(object):
     def Container_Get(self, args):
         """Displays a container's information"""
         c = self.api.Container_Get(args.id)
-        
+
         base_tab = [['Key', 'Value']]
         base_tab.extend([
             ['ID', c['id']],

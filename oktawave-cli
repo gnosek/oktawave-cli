@@ -50,6 +50,16 @@ def simple_db_subparsers(data):
 def simple_container_subparsers(data):
     return simple_subparsers(data, 'Container ID, as returned by "Container List"')
 
+def external_binary_subparsers(data):
+    return [
+        [item[0], item[1],
+            [
+                ['id', 'Virtual machine ID, as returned by "OCI List"', {'type' : int}],
+                ['exec_args', 'Extra arguments for binary (after --)', {'nargs': '*'}]
+            ] + item[2]
+        ]
+        for item in data
+    ]
 
 if(__name__ == '__main__'):
     # Change proctitle to prevent password leak
@@ -107,7 +117,15 @@ if(__name__ == '__main__'):
                 ]],
             ['List', 'List virtual machines', []],
             ['ListDetails', 'List virtual machines with details', []]
-        ])
+        ] + external_binary_subparsers([
+            ['ping', 'Run ping command with OCI IP', []],
+            ['ssh', 'Connect to OCI via ssh', [
+                ['--user', 'User to connect as']
+            ]],
+            ['ssh_copy_id', 'Copy ssh public key to OCI', [
+                ['--user', 'User to connect as']
+            ]],
+        ]))
     ocs_parser = namespace_parser.add_parser('OCS', help='Commands related to OCS')
     ocs_parsers = ocs_parser.add_subparsers(title='OCS commands', dest='command')
     parsers['OCS'] = ocs_parsers
