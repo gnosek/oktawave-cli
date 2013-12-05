@@ -36,3 +36,9 @@ class OktawaveOCIInContainer(ValueError):
 
 class OktawaveOCINotInContainer(ValueError):
     pass
+
+class OktawaveOCIInOPN(ValueError):
+    pass
+
+class OktawaveOCINotInOPN(ValueError):
+    pass

@@ -648,3 +648,61 @@ class OktawaveCli(object):
         )
         print "OK"
 
+    def OPN_List(self, args):
+        """Lists client's private networks"""
+        vlans = self.api.OPN_List()
+        def fmt(c):
+            return [c['id'], c['name'], c['address_pool'], c['payment_type']]
+
+        self._print_table(
+            ['OPN ID', 'Name', 'Address pool', 'Payment type'], vlans, fmt)
+
+    def OPN_Get(self, args):
+        """Displays an OPN"""
+        c = self.api.OPN_Get(args.id)
+
+        base_tab = [['Key', 'Value']]
+        base_tab.extend([
+            ['ID', c['id']],
+            ['Name', c['name']],
+            ['Address pool', c['address_pool']],
+            ['Payment type', c['payment_type']]
+        ])
+        self.p._print('\nBasic OPN settings')
+        self.p.print_table(base_tab)
+        vm_tab = [['OCI ID', 'Name', 'MAC address', 'Private IP address']]
+        vm_tab.extend([[
+            vm['VirtualMachine']['VirtualMachineId'],
+            vm['VirtualMachine']['VirtualMachineName'],
+            vm['MacAddress'],
+            vm['PrivateIpAddress']
+        ] for vm in c['vms']])
+        self.p._print('Virtual machines')
+        self.p.print_table(vm_tab)
+        
+    def OPN_Create(self, args, ):
+        """Creates a new OPN"""
+        c = self.api.OPN_Create(args.name, args.address_pool)
+        print "OK"
+
+    def OPN_AddOCI(self, args):
+        """Adds an OCI to an OPN"""
+        self.api.OPN_AddOCI(args.id, args.oci_id, args.ip_address)
+        print "OK"
+
+    def OPN_RemoveOCI(self, args):
+        """Removes an OCI from an OPN"""
+        self.api.OPN_RemoveOCI(args.id, args.oci_id)
+        print "OK"
+
+    def OPN_Delete(self, args):
+        """Deletes a private network."""
+        self.api.OPN_Delete(args.id)
+        print "OK"
+
+    def OPN_Rename(self, args):
+        """Changes an OPN's name"""
+        self.api.OPN_Rename(args.id, args.name)
+        print "OK"
+
+
