@@ -39,3 +39,8 @@
 
 0.7.8
 - updated for recent API changes
+
+0.8
+- Using HTTP/JSON API requests instead of SOAP - much faster
+- Added Containers and OPN namespaces
+- Major code refactoring and cleanup
