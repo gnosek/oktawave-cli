@@ -144,7 +144,7 @@ class OktawaveApi(object):
 
     def _dict_item(self, dict_id, key, default=0):
         items = self.common.call(
-            'GetDictionaryItems', dictionaryId=dict_id, clientId=self.client_id)
+            'GetDictionaryItems', dictionary=dict_id, clientId=self.client_id)
         name2id = dict((self._dict_item_name(item), item['DictionaryItemId']) for item in items)
         self._d(name2id)
         return name2id.get(key, default)
