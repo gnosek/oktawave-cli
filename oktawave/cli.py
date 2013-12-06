@@ -78,9 +78,6 @@ class OktawaveCli(object):
             ['Client ID', 'E-mail', 'Name'],
             users, fmt)
 
-    def OCI_Test(self, args):
-        self.api.OCI_Test()
-
     def OCI_TemplateCategories(self, args):
         """Lists available template categories"""
         cats = self.api.OCI_TemplateCategories()
