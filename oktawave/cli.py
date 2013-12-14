@@ -598,11 +598,10 @@ class OktawaveCli(object):
                 ['Service', c['service'] + ' (' + str(c['port']) + ')' if c['service'] == 'Port' else c['service']],
                 ['Session type', c['session_type']],
             ])
-            if c['ip_version'] == 'IPv4':
-                ips = '\n'.join(ip['ipv4'] for ip in c['ips'])
-            else:
-                ips = '\n'.join(ip['ipv6'] for ip in c['ips'])
-            base_tab.append(['IP addresses', ips])
+            ipv4 = '\n'.join(ip['ipv4'] for ip in c['ips'])
+            ipv6 = '\n'.join(ip['ipv6'] for ip in c['ips'])
+            base_tab.append(['IPv4 addresses', ipv4])
+            base_tab.append(['IPv6 addresses', ipv6])
         if c['master_service_id'] is not None:
             base_tab.extend([['Master OCI (MySQL)', c['master_service_name'] + ' (' + str(c['master_service_id']) + ')']])
         if c['db_user'] is not None:
