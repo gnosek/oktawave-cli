@@ -276,25 +276,19 @@ class OktawaveCli(object):
         settings = self.api.OCI_Settings(oci_id)
         return settings['ips'][0]['ipv4']
 
-    def _oci_default_password(self, oci_id):
-        logs = self.api.OCI_Logs(oci_id)
-        for entry in logs:
-            if entry['type'] == 'Instance access details':
-                return entry['parameters'][0]
-
     def OCI_ping(self, args):
         ip = self._oci_ip(args.id)
         os.execvp('ping', ('ping', ip)+tuple(args.exec_args))
 
     def OCI_ssh(self, args):
         ip = self._oci_ip(args.id)
-        print 'Default OCI password: %s' % self._oci_default_password(args.id)
+        print 'Default OCI password: %s' % self.api.OCI_DefaultPassword(args.id)
         remote = '%s@%s' % (args.user, ip)
         os.execvp('ssh', ('ssh', remote)+tuple(args.exec_args))
 
     def OCI_ssh_copy_id(self, args):
         ip = self._oci_ip(args.id)
-        print 'Default OCI password: %s' % self._oci_default_password(args.id)
+        print 'Default OCI password: %s' % self.api.OCI_DefaultPassword(args.id)
         remote = '%s@%s' % (args.user, ip)
         os.execvp('ssh-copy-id', ('ssh-copy-id', remote)+tuple(args.exec_args))
 

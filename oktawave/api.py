@@ -378,6 +378,12 @@ class OktawaveApi(object):
                 'parameters': [item['Value'] for item in op['Parameters']],
             }
 
+    def OCI_DefaultPassword(self, oci_id):
+        logs = self.OCI_Logs(oci_id)
+        for entry in logs:
+            if entry['type'] == 'Instance access details':
+                return entry['parameters'][0]
+
     def OCI_Settings(self, oci_id):
         """Shows basic VM settings (IP addresses, OS, names, autoscaling etc.)"""
         data = self._simple_vm_method('GetVirtualMachineById', oci_id)
