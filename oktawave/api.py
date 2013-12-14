@@ -771,6 +771,9 @@ class OktawaveApi(object):
                 res[label] = self._dict_item_name(c[item])
             else:
                 res[label] = None
+        res['ips'] = [
+            {'ipv4': ip['Address'], 'ipv6': ip['AddressV6']} for ip in c['IPs']
+        ]
         return res
 
     def Container_RemoveOCI(self, container_id, oci_id):
