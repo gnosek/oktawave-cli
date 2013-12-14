@@ -782,6 +782,16 @@ class OktawaveApi(object):
         ]
         return res
 
+    def Container_OCIList(self, container_id):
+        c_simple = self._container_simple(container_id)
+        for vm in c_simple['VirtualMachines']:
+            vms = vm['VirtualMachineSimple']
+            yield {
+                'oci_id': vms['VirtualMachineId'],
+                'oci_name': vms['VirtualMachineName'],
+                'status': PowerStatus(vms['StatusDictId'])
+            }
+
     def Container_RemoveOCI(self, container_id, oci_id):
         """Removes an instance from container"""
         self._logon()

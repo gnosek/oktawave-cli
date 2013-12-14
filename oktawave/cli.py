@@ -611,6 +611,13 @@ class OktawaveCli(object):
         self.p._print('\nBasic container settings')
         self.p.print_table(base_tab)
 
+        oci_list = self.api.Container_OCIList(args.id)
+        def fmt_oci(oci):
+            return [oci['oci_id'], oci['oci_name'], oci['status']]
+        self.p._print('\nAttached OCIs')
+        self._print_table(
+            ['ID', 'Name', 'Status'], oci_list, fmt_oci)
+
     def Container_RemoveOCI(self, args):
         """Removes an OCI from a container"""
         self.api.Container_RemoveOCI(args.id, args.oci_id)
