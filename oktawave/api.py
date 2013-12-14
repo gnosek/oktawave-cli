@@ -1,5 +1,6 @@
 from client import ApiClient
 from exceptions import *
+from time import time
 try:
     from swiftclient import Connection
 except ImportError:
@@ -23,6 +24,7 @@ DICT = {
     'OCI_CLASSES_DICT_ID': 12,
     'OVS_TIERS_DICT_ID': 17,
     'OVS_PAYMENT_ID': 33,
+    'OPN_PAYMENT_ID': 33
 }
 
 class CloneType(object):
@@ -871,6 +873,82 @@ class OktawaveApi(object):
         self._d(c)
         self.clients.call('UpdateContainer', container=c,
             virtualMachinesId=[vm['VirtualMachineId'] for vm in c_simple['VirtualMachines']])
+
+
+    def _address_pool_id(self, name):
+        pools = {'10.0.0.0/24' : 278, '192.168.0.0/24' : 279}
+        return pools[name]
+        
+    def OPN_List(self):
+        """Lists client's OPNs"""
+        self._logon()
+        vlans = self.clients.call('GetVlansByClientId', clientId=self.client_id)
+        for v in vlans:
+            yield {
+                'id': v['VlanId'],
+                'name': v['VlanName'],
+                'address_pool': self._dict_item_name(v['AddressPool']),
+                'payment_type': self._dict_item_name(v['PaymentType'])
+            }
+
+    def OPN_Get(self, opn_id):
+        self._logon()
+        v = self.clients.call('GetVlanById', vlanId=opn_id, clientId=self.client_id)
+        vms = self.clients.call('GetVirtualMachineVlansByVlanId', vlanId=opn_id, clientId=self.client_id)
+        return {
+            'id': v['VlanId'],
+            'name': v['VlanName'],
+            'address_pool': self._dict_item_name(v['AddressPool']),
+            'payment_type': self._dict_item_name(v['PaymentType']),
+            'vms': vms
+        }
+
+    def OPN_Create(self, name, address_pool):
+        self._logon()
+        self._d(self.client_object)
+        return self.clients.call('CreateVlan', vlan={
+            'VlanName' : name,
+            'AddressPool' : {'DictionaryItemId' : self._address_pool_id(address_pool)},
+            'OwnerClient' : self.client_object['Client'],
+            'PaymentType' : {'DictionaryItemId' : DICT['OPN_PAYMENT_ID']},
+            'CreationUserId' : self.client_id
+        })
+
+    def OPN_Delete(self, opn_id):
+        self._logon()
+        return self.clients.call('DeleteVlan', vlanId=opn_id, clientId=self.client_id)
+
+    def OPN_AddOCI(self, opn_id, oci_id, ip_address):
+        self._logon()
+        oci = self.clients.call('GetVirtualMachineById', virtualMachineId=oci_id, clientId=self.client_id)
+        vlan = self.clients.call('GetVlanById', vlanId=opn_id, clientId=self.client_id)
+        for opn in oci['PrivateIpv4']:
+            if opn['Vlan']['VlanId'] == opn_id:
+                raise OktawaveOCIInOPN()
+        oci['PrivateIpv4'].append({
+            'PrivateIpAddress' : ip_address,
+            'VirtualMachine' : {'VirtualMachineName' : oci['VirtualMachineName'], 'VirtualMachineId' : oci_id, 'StatusDictId' : oci['Status']['DictionaryItemId']},
+            'Vlan' : vlan,
+            'CreationDate' : '/Date(' + str(int(time()) * 100) + '+0000)/', # for some reason API server does not fill this field automatically
+        })
+        return self.clients.call('UpdateVirtualMachine', machine=oci, clientId=self.client_id, classChangeInScheduler=False)
+
+    def OPN_RemoveOCI(self, opn_id, oci_id):
+        self._logon()
+        oci = self.clients.call('GetVirtualMachineById', virtualMachineId=oci_id, clientId=self.client_id)
+        vlan = self.clients.call('GetVlanById', vlanId=opn_id, clientId=self.client_id)
+        l1 = len(oci['PrivateIpv4'])
+        oci['PrivateIpv4'] = filter(lambda x: x['Vlan']['VlanId'] != opn_id, oci['PrivateIpv4'])
+        if l1 == len(oci['PrivateIpv4']):
+            raise OktawaveOCINotInOPN()
+        return self.clients.call('UpdateVirtualMachine', machine=oci, clientId=self.client_id, classChangeInScheduler=False)
+
+    def OPN_Rename(self, opn_id, name):
+        self._logon()
+        vlan = self.clients.call('GetVlanById', vlanId=opn_id, clientId=self.client_id)
+        vlan['VlanName'] = name
+        return self.clients.call('UpdateVlan', vlan=vlan)
+
 
 
 class OCSConnection(Connection):

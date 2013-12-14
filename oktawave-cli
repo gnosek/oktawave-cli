@@ -50,6 +50,9 @@ def simple_db_subparsers(data):
 def simple_container_subparsers(data):
     return simple_subparsers(data, 'Container ID, as returned by "Container List"')
 
+def simple_opn_subparsers(data):
+    return simple_subparsers(data, 'Network ID, as returned by "OPN List"')
+
 def external_binary_subparsers(data):
     return [
         [item[0], item[1],
@@ -293,6 +296,34 @@ if(__name__ == '__main__'):
         ] + simple_container_subparsers([
             ['Get', 'Display a container\'s information'],
             ['Delete', 'Delete a container']
+        ]))
+    opn_parser = namespace_parser.add_parser('OPN', help='Oktawave Private Network commands')
+    opn_parsers = opn_parser.add_subparsers(title='OPN commands', dest='command')
+    parsers['OPN'] = opn_parsers
+    add_subparsers(opn_parsers, [
+        ['List', 'List private networks', []],
+        ['Create', 'Create a new OPN', [
+            ['name', 'Name of the OPN'],
+            ['--address-pool', 'IP address pool (default: 10.0.0.0/24)', {
+                'choices' : ['10.0.0.0/24', '192.168.0.0/24'],
+                'default' : '10.0.0.0/24'}]
+        ]],
+        ['AddOCI', 'Add an OCI to an OPN', [
+            ['id', 'OPN ID', {'type' : int}],
+            ['oci_id', 'OCI ID', {'type' : int}],
+            ['ip_address', 'The private IP address'],
+        ]],
+        ['RemoveOCI', 'Remove an OCI from an OPN', [
+            ['id', 'OPN ID', {'type' : int}],
+            ['oci_id', 'OCI ID', {'type' : int}],
+        ]],
+        ['Rename', 'Change an OPN\'s name', [
+            ['id', 'OPN ID', {'type' : int}],
+            ['name', 'New OPN name']
+        ]],
+        ] + simple_opn_subparsers([
+            ['Get', 'Display an OPN\'s information'],
+            ['Delete', 'Delete an OPN']
         ]))
     # adding dummy "---" help string to found methods that are not
     # documented yet (this gotta go when finished, or probably should be done in
