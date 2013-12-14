@@ -751,21 +751,26 @@ class OktawaveApi(object):
             'id': c['ContainerId'],
             'name': c['ContainerName'],
             'healthcheck': c['IsServiceCheckAvailable'],
-            'ip_version': self._dict_item_name(c['IPVersion']),
             'load_balancer': c['IsLoadBalancer'],
             'master_service_id': c['MasterServiceId'],
             'master_service_name': c['MasterServiceName'],
             'proxy_cache': c['IsProxyCache'],
             'ssl': c['IsSSLUsed'],
-            'load_balancer_algorithm': self._dict_item_name(c['LoadBalancerAlgorithm']),
             'port': c['PortNumber'],
             'schedulers': c['SchedulersCount'],
-            'service': self._dict_item_name(c['Service']),
-            'session_type': self._dict_item_name(c['SessionType']),
             'vms': c['VirtualMachineCount'],
             'db_user': c['DatabaseUserLogin'],
             'db_password': c['DatabaseUserPassword']
         }
+        for label, item in (
+            ('ip_version', 'IPVersion'),
+            ('load_balancer_algorithm', 'LoadBalancerAlgorithm'),
+            ('service', 'Service'),
+            ('session_type', 'SessionType')):
+            if c[item]:
+                res[label] = self._dict_item_name(c[item])
+            else:
+                res[label] = None
         return res
 
     def Container_RemoveOCI(self, container_id, oci_id):

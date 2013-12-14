@@ -591,16 +591,19 @@ class OktawaveCli(object):
             ['Name', c['name']],
             ['Autoscaling', c['autoscaling']],
             ['Healthcheck', 'Yes' if c['healthcheck'] else 'No'],
-            ['IP version', c['ip_version']],
             ['Load balancer', 'Yes' if c['load_balancer'] else 'No'],
-            ['Load balancer algorithm', c['load_balancer_algorithm']],
-            ['Proxy cache', 'Yes' if c['proxy_cache'] else 'No'],
-            ['SSL enabled', 'Yes' if c['ssl'] else 'No'],
-            ['Service', c['service'] + ' (' + str(c['port']) + ')' if c['service'] == 'Port' else c['service']],
-            ['Session type', c['session_type']],
             ['Schedulers', c['schedulers']],
             ['Virtual machines', c['vms']],
         ])
+        if c['load_balancer']:
+            base_tab.extend([
+                ['IP version', c['ip_version']],
+                ['Load balancer algorithm', c['load_balancer_algorithm']],
+                ['Proxy cache', 'Yes' if c['proxy_cache'] else 'No'],
+                ['SSL enabled', 'Yes' if c['ssl'] else 'No'],
+                ['Service', c['service'] + ' (' + str(c['port']) + ')' if c['service'] == 'Port' else c['service']],
+                ['Session type', c['session_type']],
+            ])
         if c['master_service_id'] is not None:
             base_tab.extend([['Master OCI (MySQL)', c['master_service_name'] + ' (' + str(c['master_service_id']) + ')']])
         if c['db_user'] is not None:
