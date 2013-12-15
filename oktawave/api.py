@@ -51,6 +51,49 @@ class PowerStatus(object):
         else:
             return 'unknown status #%d' % self.status
 
+class DictionaryItem(object):
+    LANGUAGE_ID = 2
+    ITEM_ID_FIELD = 'DictionaryItemId'
+    NAME_LIST_FIELD = 'DictionaryItemNames'
+    NAME_FIELD = 'ItemName'
+
+    def _dict_names(self, data, field):
+        return [item[field] for item in data if item['LanguageDictId'] == self.LANGUAGE_ID]
+
+    def _dict_item_name(self, data):
+        return self._dict_names(data[self.NAME_LIST_FIELD], self.NAME_FIELD)[0]
+
+    def __init__(self, item):
+        self.id = item[self.ITEM_ID_FIELD]
+        self.name = self._dict_item_name(item)
+        self.item = item
+
+    def __str__(self):
+        return self.name
+
+    def __int__(self):
+        return self.id
+
+class TemplateCategory(DictionaryItem):
+    ITEM_ID_FIELD = 'TemplateCategoryId'
+    NAME_LIST_FIELD = 'TemplateCategoryNames'
+    NAME_FIELD = 'CategoryName'
+
+    def __init__(self, data, parent_id):
+        super(TemplateCategory, self).__init__(data)
+        self.parent_id = parent_id
+        self.description = self._dict_names(data[self.NAME_LIST_FIELD], 'CategoryDescription')[0]
+        self.tree_path = '/'.join(self._dict_names(data[self.NAME_LIST_FIELD], self.NAME_FIELD))
+
+class SoftwareItem(DictionaryItem):
+    ITEM_ID_FIELD = 'SoftwareId'
+    NAME_LIST_FIELD = 'SoftwareNames'
+    NAME_FIELD = 'Name'
+
+    def __init__(self, data):
+        super(SoftwareItem, self).__init__(data)
+        self.tree_path = '/'.join(self._dict_names(data[self.NAME_LIST_FIELD], self.NAME_FIELD))
+
 class OktawaveApi(object):
 
     def __init__(self, username, password, debug=False):
@@ -114,12 +157,6 @@ class OktawaveApi(object):
         self.client_object = res
         return res
 
-    def _dict_names(self, data, field='ItemName'):
-        return [item[field] for item in data if item['LanguageDictId'] == 2]
-
-    def _dict_item_name(self, data):
-        return self._dict_names(data['DictionaryItemNames'], 'ItemName')[0]
-
     def _simple_vm_method(self, method, vm_id):
         """Wraps around common simple virtual machine method call pattern"""
         self._logon()
@@ -142,21 +179,25 @@ class OktawaveApi(object):
     def _get_machine_ip(self):
         return '127.0.0.1'
 
-    def _dict_item(self, dict_id, key, default=0):
+    def _dict_item(self, dict_id, key):
         items = self.common.call(
             'GetDictionaryItems', dictionary=dict_id, clientId=self.client_id)
-        name2id = dict((self._dict_item_name(item), item['DictionaryItemId']) for item in items)
-        self._d(name2id)
-        return name2id.get(key, default)
+        for item in items:
+            item = DictionaryItem(item)
+            if item.name == key:
+                return item
 
-    def _oci_class_id(self, class_name):
-        """Returns ID of an OCI class with a given name"""
+    def _oci_class(self, class_name):
+        """Returns a dictionary item for OCI class with a given name"""
         return self._dict_item(DICT['OCI_CLASSES_DICT_ID'], class_name)
 
-    def _ovs_tier_id(self, tier):
+    def _ovs_tier(self, tier):
         """Returns ID of a given disk tier"""
         tier_name = 'Tier ' + str(tier)
-        return self._dict_item(DICT['OVS_TIERS_DICT_ID'], tier_name)
+        tier_obj = self._dict_item(DICT['OVS_TIERS_DICT_ID'], tier_name)
+        if not tier_obj:
+            raise OktawaveOVSTierNotFound()
+        return tier_obj
 
     def _ovs_disk_mod(self, disk):
         vms = [
@@ -209,9 +250,9 @@ class OktawaveApi(object):
         # TODO: probably get more settings
         return {
             'time_zone': client['TimeZone']['DisplayName'],
-            'currency': self._dict_item_name(client['Currency']),
-            'date_format': self._dict_item_name(client['DateFormat']),
-            'availability_zone': self._dict_item_name(
+            'currency': DictionaryItem(client['Currency']),
+            'date_format': DictionaryItem(client['DateFormat']),
+            'availability_zone': DictionaryItem(
                 self.common.call('GetDictionaryItemById', dictionaryItemId=client['AvailabilityZone'])),
             '24h_clock': client['Is24HourClock'],
         }
@@ -226,11 +267,11 @@ class OktawaveApi(object):
                 'id': op['AsynchronousOperationId'],
                 'creation_date': op['CreationDate'],
                 'creation_user_name': op['CreationUserFullName'],
-                'type': self._dict_item_name(op['OperationType']),
-                'object_type': self._dict_item_name(op['ObjectType']),
+                'type': DictionaryItem(op['OperationType']),
+                'object_type': DictionaryItem(op['ObjectType']),
                 'object_name': op['ObjectName'],
                 'progress_percent': op['Progress'],
-                'status': self._dict_item_name(op['Status'])
+                'status': DictionaryItem(op['Status'])
             }
 
     def Account_Users(self):
@@ -246,31 +287,17 @@ class OktawaveApi(object):
 
     # OCI (VMs) ###
 
-    def OCI_Test(self):
-        self._logon()
-        self._d(self._oci_class_id('Large'))
-
     def OCI_TemplateCategories(self):
         """Lists available template categories"""
         self._logon()
         data = self.common.call('GetTemplateCategories', clientId=self.client_id)
         self._d(data)
 
-        def _tc_info(tc, parent_id):
-            return {
-                'id': tc['TemplateCategoryId'],
-                'name': self._dict_names(
-                    tc['TemplateCategoryNames'], 'CategoryName')[0],
-                'description': self._dict_names(
-                    tc['TemplateCategoryNames'], 'CategoryDescription')[0],
-                'parent_id': parent_id,
-            }
-
         for tc in data:
-            yield _tc_info(tc, None)
+            yield TemplateCategory(tc, None)
             if tc['CategoryChildren'] is not None:
                 for tcc in tc['CategoryChildren']:
-                    yield _tc_info(tcc, tc['TemplateCategoryId'])
+                    yield TemplateCategory(tcc, tc['TemplateCategoryId'])
 
     def OCI_Templates(self, category_id, name_filter=''):
         """Lists templates in a category"""
@@ -286,24 +313,20 @@ class OktawaveApi(object):
         self._logon()
         data = self.clients.call('GetTemplate', templateId=template_id, clientId=self.client_id)
 
-        template_category = '/'.join(self._dict_names(
-            data['TemplateCategory']['TemplateCategoryNames'], field='CategoryName'))
-
-        software = ', '.join(
-            '/'.join(self._dict_names(s['Software']['SoftwareNames'], field="Name"))
-            for s in data['SoftwareList'])
+        template_category = TemplateCategory(data['TemplateCategory'], None)
+        software = [SoftwareItem(item['Software']) for item in data['SoftwareList']]
 
         return {
             'template_id': data['TemplateId'],
             'template_name': data['TemplateName'],
-            'template_category': template_category,
+            'template_category': template_category.tree_path,
             'vm_class_id': data['VMClass']['DictionaryItemId'],
-            'vm_class_name': self._dict_item_name(data['VMClass']),
-            'system_category_name': self._dict_item_name(data['TemplateSystemCategory']),
+            'vm_class_name': DictionaryItem(data['VMClass']),
+            'system_category_name': DictionaryItem(data['TemplateSystemCategory']),
             'label': data['Name'],
             'software': software,
             'eth_count': data['EthernetControllersCount'],
-            'connection_type': self._dict_item_name(data['ConnectionType']),
+            'connection_type': DictionaryItem(data['ConnectionType']),
             'disks': [{
                 'name': hdd['HddName'],
                 'capacity_gb': hdd['CapacityGB'],
@@ -335,7 +358,7 @@ class OktawaveApi(object):
                 'id': vm['VirtualMachineId'],
                 'name': vm['VirtualMachineName'],
                 'status': PowerStatus(vm['StatusDictId']),
-                'class_name': self._dict_item_name(vm['VMClass']),
+                'class_name': DictionaryItem(vm['VMClass']),
                 'cpu_mhz': vm['CpuMhz'],
                 'cpu_usage_mhz': vm['CpuMhzUsage'],
                 'memory_mb': vm['RamMB'],
@@ -372,9 +395,9 @@ class OktawaveApi(object):
         for op in data['_results']:
             yield {
                 'time': self.clients.parse_date(op['CreationDate']),
-                'type': self._dict_item_name(op['OperationType']),
+                'type': DictionaryItem(op['OperationType']),
                 'user_name': op['CreationUser']['FullName'],
-                'status': self._dict_item_name(op['Status']),
+                'status': DictionaryItem(op['Status']),
                 'parameters': [item['Value'] for item in op['Parameters']],
             }
 
@@ -389,20 +412,20 @@ class OktawaveApi(object):
         data = self._simple_vm_method('GetVirtualMachineById', oci_id)
 
         res = {
-            'autoscaling': self._dict_item_name(data['AutoScalingType']),
-            'connection_type': self._dict_item_name(data['ConnectionType']),
+            'autoscaling': DictionaryItem(data['AutoScalingType']),
+            'connection_type': DictionaryItem(data['ConnectionType']),
             'cpu_mhz': data['CpuMhz'],
             'cpu_usage_mhz': data['CpuMhzUsage'],
             'creation_date': self.clients.parse_date(data['CreationDate']),
             'creation_user_name': data['CreationUserSimple']['FullName'],
             'iops_usage': data['IopsUsage'],
             'last_change_date': self.clients.parse_date(data['LastChangeDate']),
-            'payment_type': self._dict_item_name(data['PaymentType']),
+            'payment_type': DictionaryItem(data['PaymentType']),
             'memory_mb': data['RamMB'],
             'memory_usage_mb': data['RamMBUsage'],
-            'status': self._dict_item_name(data['Status']),
+            'status': DictionaryItem(data['Status']),
             'name': data['VirtualMachineName'],
-            'vm_class_name': self._dict_item_name(data['VMClass']),
+            'vm_class_name': DictionaryItem(data['VMClass']),
             'disks': [{
                 'id': disk['ClientHddId'],
                 'name': disk['ClientHdd']['HddName'],
@@ -419,7 +442,7 @@ class OktawaveApi(object):
                 'creation_date': self.clients.parse_date(ip['CreationDate']),
                 'dhcp_branch': ip['DhcpBranch'],
                 'gateway': ip['Gateway'],
-                'status': self._dict_item_name(ip['IPStatus']),
+                'status': DictionaryItem(ip['IPStatus']),
                 'last_change_date': self.clients.parse_date(ip['LastChangeDate']),
                 'macaddr': ip['MacAddress'],
                 } for ip in data['IPs']],
@@ -437,10 +460,10 @@ class OktawaveApi(object):
     def OCI_ChangeClass(self, oci_id, oci_class, at_midnight=False):
         """Changes running VM class, potentially rebooting it"""
         oci = self._simple_vm_method('GetVirtualMachineById', oci_id)
-        oci_class_id = self._oci_class_id(oci_class)
-        if not oci_class_id:
+        oci_class_obj = self._oci_class(oci_class)
+        if not oci_class_obj:
             raise OktawaveOCIClassNotFound()
-        oci['VMClass'] = self.common.call('GetDictionaryItemById', dictionaryItemId=oci_class_id)
+        oci['VMClass'] = oci_class_obj.item
         self._d(oci)
         oci.setdefault('PrivateIpv4', '')
         self.clients.call(
@@ -451,9 +474,10 @@ class OktawaveApi(object):
         self._logon()
         oci_class_id = None
         if oci_class is not None:
-            oci_class_id = self._oci_class_id(oci_class)
-            if not oci_class_id:
+            oci_class_obj = self._oci_class(oci_class)
+            if not oci_class_obj:
                 raise OktawaveOCIClassNotFound()
+            oci_class_id = oci_class_obj.id
         self.clients.call('CreateVirtualMachine',
                           templateId=template,
                           disks=None,
@@ -502,7 +526,7 @@ class OktawaveApi(object):
             yield {
                 'id': disk['ClientHddId'],
                 'name': disk['HddName'],
-                'tier': self._dict_item_name(disk['HddStandard']),
+                'tier': DictionaryItem(disk['HddStandard']),
                 'capacity_gb': disk['CapacityGB'],
                 'used_gb': disk['UsedCapacityGB'],
                 'is_shared': disk['IsShared'],
@@ -522,7 +546,7 @@ class OktawaveApi(object):
         disk = {
             'CapacityGB': capacity_gb,
             'HddName': name,
-            'HddStandardId': self._ovs_tier_id(tier),
+            'HddStandardId': self._ovs_tier(tier).id,
             'IsShared': shared,
             'PaymentTypeId': DICT['OVS_PAYMENT_ID'],
             'VirtualMachineIds': [],
@@ -569,7 +593,7 @@ class OktawaveApi(object):
             raise OktawaveOVSNotFoundError()
 
         disk_mod = self._ovs_disk_mod(disk)
-        disk_mod['HddStandardId'] = self._ovs_tier_id(tier)
+        disk_mod['HddStandardId'] = self._ovs_tier(tier).id
 
         self.clients.call('UpdateDisk', clientHdd=disk_mod, clientId=self.client_id)
 
@@ -603,7 +627,7 @@ class OktawaveApi(object):
             yield {
                 'id': db['VirtualMachineId'],
                 'name': db['VirtualMachineName'],
-                'type': self._dict_item_name(db['DatabaseType']),
+                'type': DictionaryItem(db['DatabaseType']),
                 'size': db['Size'],
                 'available_space': db['AvailableSpace'],
             }
@@ -650,7 +674,7 @@ class OktawaveApi(object):
                 yield {
                     'id': db['VirtualMachineId'],
                     'name': db['DatabaseName'],
-                    'type': self._dict_item_name(db['DatabaseType']),
+                    'type': DictionaryItem(db['DatabaseType']),
                     'encoding': db['Encoding'],
                     'is_running': db['IsRunning'],
                     'qps': db['QPS'],
@@ -753,7 +777,7 @@ class OktawaveApi(object):
         self._logon()
         c = self.clients.call('GetContainer', containerId=container_id)
         res = {
-            'autoscaling': self._dict_item_name(c['AutoScalingType']),
+            'autoscaling': DictionaryItem(c['AutoScalingType']),
             'id': c['ContainerId'],
             'name': c['ContainerName'],
             'healthcheck': c['IsServiceCheckAvailable'],
@@ -774,7 +798,7 @@ class OktawaveApi(object):
             ('service', 'Service'),
             ('session_type', 'SessionType')):
             if c[item]:
-                res[label] = self._dict_item_name(c[item])
+                res[label] = DictionaryItem(c[item])
             else:
                 res[label] = None
         res['ips'] = [
@@ -911,8 +935,8 @@ class OktawaveApi(object):
             yield {
                 'id': v['VlanId'],
                 'name': v['VlanName'],
-                'address_pool': self._dict_item_name(v['AddressPool']),
-                'payment_type': self._dict_item_name(v['PaymentType'])
+                'address_pool': DictionaryItem(v['AddressPool']),
+                'payment_type': DictionaryItem(v['PaymentType'])
             }
 
     def OPN_Get(self, opn_id):
@@ -922,8 +946,8 @@ class OktawaveApi(object):
         return {
             'id': v['VlanId'],
             'name': v['VlanName'],
-            'address_pool': self._dict_item_name(v['AddressPool']),
-            'payment_type': self._dict_item_name(v['PaymentType']),
+            'address_pool': DictionaryItem(v['AddressPool']),
+            'payment_type': DictionaryItem(v['PaymentType']),
             'vms': vms
         }
 
