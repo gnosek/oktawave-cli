@@ -74,6 +74,17 @@ class DictionaryItem(object):
     def __int__(self):
         return self.id
 
+    def __eq__(self, other):
+        try:
+            if str(self) == str(other):
+                return True
+        except ValueError:
+            pass
+        return str(self) == str(other)
+
+    def __ne__(self, other):
+        return not self == other
+
 class TemplateCategory(DictionaryItem):
     ITEM_ID_FIELD = 'TemplateCategoryId'
     NAME_LIST_FIELD = 'TemplateCategoryNames'
