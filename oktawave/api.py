@@ -892,7 +892,9 @@ class OktawaveApi(object):
 
     def Container_Create(
             self, name, load_balancer, service, port, proxy_cache, ssl,
-            healthcheck, master_id, session, lb_algorithm,ip_version, autoscaling):
+            healthcheck, master_id, session, lb_algorithm, ip_version, autoscaling):
+        if lb_algorithm == 'least_response_time' and service != 'HTTP' and service != 'HTTPS':
+            raise OktawaveLRTNotAllowed()
         self._logon()
         vm_ids = [] if master_id is None else [master_id]
         result = self.clients.call('CreateContainer', container = {
@@ -918,6 +920,8 @@ class OktawaveApi(object):
             self, container_id, name, load_balancer, service, port, proxy_cache, ssl,
             healthcheck, master_id, session, lb_algorithm, ip_version, autoscaling):
         self._logon()
+        if lb_algorithm == 'least_response_time' and service != 'HTTP' and service != 'HTTPS':
+            raise OktawaveLRTNotAllowed()
         c = self.clients.call('GetContainer', containerId=container_id)
         c_simple = self._container_simple(container_id)
         c['ContainerName'] = name

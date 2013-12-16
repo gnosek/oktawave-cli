@@ -12,7 +12,7 @@ import os
 import readline
 
 
-VERSION = "0.8"
+VERSION = "0.8.1"
 
 # Helpers to add subparsers based on simple descriptions
 # Use subparser.add_argument() if you need to make use of all argparse options

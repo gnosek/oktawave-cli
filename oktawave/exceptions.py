@@ -45,3 +45,6 @@ class OktawaveOCIInOPN(ValueError):
 
 class OktawaveOCINotInOPN(ValueError):
     pass
+
+class OktawaveLRTNotAllowed(ValueError):
+    pass
