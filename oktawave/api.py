@@ -378,6 +378,12 @@ class OktawaveApi(object):
                 'parameters': [item['Value'] for item in op['Parameters']],
             }
 
+    def OCI_DefaultPassword(self, oci_id):
+        logs = self.OCI_Logs(oci_id)
+        for entry in logs:
+            if entry['type'] == 'Instance access details':
+                return entry['parameters'][0]
+
     def OCI_Settings(self, oci_id):
         """Shows basic VM settings (IP addresses, OS, names, autoscaling etc.)"""
         data = self._simple_vm_method('GetVirtualMachineById', oci_id)
@@ -751,21 +757,29 @@ class OktawaveApi(object):
             'id': c['ContainerId'],
             'name': c['ContainerName'],
             'healthcheck': c['IsServiceCheckAvailable'],
-            'ip_version': self._dict_item_name(c['IPVersion']),
             'load_balancer': c['IsLoadBalancer'],
             'master_service_id': c['MasterServiceId'],
             'master_service_name': c['MasterServiceName'],
             'proxy_cache': c['IsProxyCache'],
             'ssl': c['IsSSLUsed'],
-            'load_balancer_algorithm': self._dict_item_name(c['LoadBalancerAlgorithm']),
             'port': c['PortNumber'],
             'schedulers': c['SchedulersCount'],
-            'service': self._dict_item_name(c['Service']),
-            'session_type': self._dict_item_name(c['SessionType']),
             'vms': c['VirtualMachineCount'],
             'db_user': c['DatabaseUserLogin'],
             'db_password': c['DatabaseUserPassword']
         }
+        for label, item in (
+            ('ip_version', 'IPVersion'),
+            ('load_balancer_algorithm', 'LoadBalancerAlgorithm'),
+            ('service', 'Service'),
+            ('session_type', 'SessionType')):
+            if c[item]:
+                res[label] = self._dict_item_name(c[item])
+            else:
+                res[label] = None
+        res['ips'] = [
+            {'ipv4': ip['Address'], 'ipv6': ip['AddressV6']} for ip in c['IPs']
+        ]
         return res
 
     def Container_RemoveOCI(self, container_id, oci_id):

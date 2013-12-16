@@ -276,25 +276,19 @@ class OktawaveCli(object):
         settings = self.api.OCI_Settings(oci_id)
         return settings['ips'][0]['ipv4']
 
-    def _oci_default_password(self, oci_id):
-        logs = self.api.OCI_Logs(oci_id)
-        for entry in logs:
-            if entry['type'] == 'Instance access details':
-                return entry['parameters'][0]
-
     def OCI_ping(self, args):
         ip = self._oci_ip(args.id)
         os.execvp('ping', ('ping', ip)+tuple(args.exec_args))
 
     def OCI_ssh(self, args):
         ip = self._oci_ip(args.id)
-        print 'Default OCI password: %s' % self._oci_default_password(args.id)
+        print 'Default OCI password: %s' % self.api.OCI_DefaultPassword(args.id)
         remote = '%s@%s' % (args.user, ip)
         os.execvp('ssh', ('ssh', remote)+tuple(args.exec_args))
 
     def OCI_ssh_copy_id(self, args):
         ip = self._oci_ip(args.id)
-        print 'Default OCI password: %s' % self._oci_default_password(args.id)
+        print 'Default OCI password: %s' % self.api.OCI_DefaultPassword(args.id)
         remote = '%s@%s' % (args.user, ip)
         os.execvp('ssh-copy-id', ('ssh-copy-id', remote)+tuple(args.exec_args))
 
@@ -591,16 +585,23 @@ class OktawaveCli(object):
             ['Name', c['name']],
             ['Autoscaling', c['autoscaling']],
             ['Healthcheck', 'Yes' if c['healthcheck'] else 'No'],
-            ['IP version', c['ip_version']],
             ['Load balancer', 'Yes' if c['load_balancer'] else 'No'],
-            ['Load balancer algorithm', c['load_balancer_algorithm']],
-            ['Proxy cache', 'Yes' if c['proxy_cache'] else 'No'],
-            ['SSL enabled', 'Yes' if c['ssl'] else 'No'],
-            ['Service', c['service'] + ' (' + str(c['port']) + ')' if c['service'] == 'Port' else c['service']],
-            ['Session type', c['session_type']],
             ['Schedulers', c['schedulers']],
             ['Virtual machines', c['vms']],
         ])
+        if c['load_balancer']:
+            base_tab.extend([
+                ['IP version', c['ip_version']],
+                ['Load balancer algorithm', c['load_balancer_algorithm']],
+                ['Proxy cache', 'Yes' if c['proxy_cache'] else 'No'],
+                ['SSL enabled', 'Yes' if c['ssl'] else 'No'],
+                ['Service', c['service'] + ' (' + str(c['port']) + ')' if c['service'] == 'Port' else c['service']],
+                ['Session type', c['session_type']],
+            ])
+            ipv4 = '\n'.join(ip['ipv4'] for ip in c['ips'])
+            ipv6 = '\n'.join(ip['ipv6'] for ip in c['ips'])
+            base_tab.append(['IPv4 addresses', ipv4])
+            base_tab.append(['IPv6 addresses', ipv6])
         if c['master_service_id'] is not None:
             base_tab.extend([['Master OCI (MySQL)', c['master_service_name'] + ' (' + str(c['master_service_id']) + ')']])
         if c['db_user'] is not None:
