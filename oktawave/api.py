@@ -223,6 +223,7 @@ class OktawaveApi(object):
         disk_mod = {
             'CapacityGB': disk['CapacityGB'],
             'ClientHddId': disk['ClientHddId'],
+            'ClusterId': disk['Cluster']['ClusterId'],
             'HddName': disk['HddName'],
             'IsShared': disk['IsShared'],
             'HddStandardId': disk['HddStandard']['DictionaryItemId'],
