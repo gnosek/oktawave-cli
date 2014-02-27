@@ -615,7 +615,7 @@ class OktawaveApi(object):
             raise OktawaveOVSNotFoundError()
 
         disk_mod = self._ovs_disk_mod(disk)
-        if disk_mod['LockVirtualMachineIds']:
+        if disk_mod.pop('LockVirtualMachineIds'):
             raise OktawaveOVSMappedError()
 
         if disk_mod['CapacityGB'] > capacity_gb:
