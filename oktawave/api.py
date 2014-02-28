@@ -417,7 +417,10 @@ class OktawaveApi(object):
         logs = self.OCI_Logs(oci_id)
         for entry in logs:
             if entry['type'] == 'Instance access details':
-                return entry['parameters'][0]
+                try:
+                    return entry['parameters'][0]
+                except IndexError:
+                    return  # no data yet
 
     def OCI_Settings(self, oci_id):
         """Shows basic VM settings (IP addresses, OS, names, autoscaling etc.)"""
