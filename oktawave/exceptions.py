@@ -4,6 +4,9 @@ class OktawaveLoginError(RuntimeError):
 class OktawaveOCIClassNotFound(ValueError):
     pass
 
+class OktawaveOVSTierNotFound(ValueError):
+    pass
+
 class OktawaveOVSMapError(ValueError):
     pass
 

@@ -82,10 +82,10 @@ class OktawaveCli(object):
         """Lists available template categories"""
         cats = self.api.OCI_TemplateCategories()
         def fmt(cat):
-            tc_id = cat['id']
-            if cat['parent_id'] is not None:
+            tc_id = cat.id
+            if cat.parent_id is not None:
                 tc_id = '  ' + str(tc_id)
-            return [tc_id, cat['name'], cat['description']]
+            return [tc_id, cat.name, cat.description]
 
         self._print_table(
             ['Template category ID', 'Name', 'Description'],
@@ -118,7 +118,7 @@ class OktawaveCli(object):
             ['Template name', ti['template_name']],
             ['System category', ti['system_category_name']],
             ['Template category', ti['template_category']],
-            ['Software', ti['software']],
+            ['Software', ', '.join(str(s) for s in ti['software'])],
             ['Ethernet controllers', ti['eth_count']],
             ['Connection', ti['connection_type']],
             ['Disk drives', ', '.join(_hdd_label(hdd) for hdd in ti['disks'])],
@@ -610,6 +610,13 @@ class OktawaveCli(object):
             base_tab.extend([['Database password', c['db_password']]])
         self.p._print('\nBasic container settings')
         self.p.print_table(base_tab)
+
+        oci_list = self.api.Container_OCIList(args.id)
+        def fmt_oci(oci):
+            return [oci['oci_id'], oci['oci_name'], oci['status']]
+        self.p._print('\nAttached OCIs')
+        self._print_table(
+            ['ID', 'Name', 'Status'], oci_list, fmt_oci)
 
     def Container_RemoveOCI(self, args):
         """Removes an OCI from a container"""
