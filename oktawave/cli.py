@@ -327,8 +327,7 @@ class OktawaveCli(object):
 
     def OCS_CreateContainer(self, args):
         """Creates a new container"""
-        container, path = self._ocs_split_params(args)
-        self.ocs.put_container(name)
+        self.ocs.put_container(args.name)
         print "OK"
 
     def OCS_CreateDirectory(self, args):
@@ -341,7 +340,7 @@ class OktawaveCli(object):
     def OCS_Put(self, args):
         """Uploads a file to the server"""
         container, path = self._ocs_split_params(args)
-        fh = open(local_path, 'r')
+        fh = open(args.local_path, 'r')
         self.ocs.put_object(container, path, fh)
         print "OK"
 
