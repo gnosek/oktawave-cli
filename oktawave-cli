@@ -12,7 +12,7 @@ import os
 import readline
 
 
-VERSION = "0.8.2"
+VERSION = "0.8.3"
 
 # Helpers to add subparsers based on simple descriptions
 # Use subparser.add_argument() if you need to make use of all argparse options
@@ -107,7 +107,8 @@ if(__name__ == '__main__'):
             ['Create', 'Create a new VM instance from template', [
                 ['template', 'Template ID, as returned by "OCI Templates"', {'type' : int}],
                 ['name', 'VM name'],
-                ['oci_class', 'OCI class name, for example "Small" or "Extreme". If not specified, the minimal class for the template is used.', {'nargs' : '?'}]
+                ['oci_class', 'OCI class name, for example "Small" or "Extreme". If not specified, the minimal class for the template is used.', {'nargs' : '?'}],
+                ['subregion', 'Subregion: 1 for PL-001, 2 for PL-002 or Auto (the default)', {'nargs' : '?', 'choices' : ['1', '2', 'Auto'], 'default' : 'Auto'}]
                 ]],
             ['ChangeClass', 'Change running VM class', [
                 ['id', 'Existing virtual machine ID, as returned by "OCI List"', {'type' : int}],
@@ -174,7 +175,8 @@ if(__name__ == '__main__'):
             ['name', 'Disk name'],
             ['capacity', 'Disk capacity (GB)', {'type' : int}],
             ['tier', 'Disk tier (1, 2, 3 or 5)', {'type' : int, 'choices' : [1, 2, 3, 4, 5]}],
-            ['disktype', 'If disk is shared or unshared?', {'choices': ['shared', 'unshared']}]
+            ['disktype', 'If disk is shared or unshared?', {'choices': ['shared', 'unshared']}],
+            ['subregion', 'Subregion: 1 for PL-001, 2 for PL-002 or Auto (the default)', {'nargs' : '?', 'choices' : ['1', '2', 'Auto'], 'default' : 'Auto'}]
             ]],
         ['Map', 'Map a disk to an instance', [
             ['disk_id', 'Disk ID, as returned by "OVS List"', {'type' : int}],
@@ -211,7 +213,8 @@ if(__name__ == '__main__'):
             ]],
         ['Create', 'Create a new database VM instance from template', [
             ['template', 'Template ID, as returned by "ORDB Templates"', {'type' : int}],
-            ['name', 'Database VM name']
+            ['name', 'Database VM name'],
+            ['subregion', 'Subregion: 1 for PL-001, 2 for PL-002 or Auto (the default)', {'nargs' : '?', 'choices' : ['1', '2', 'Auto'], 'default' : 'Auto'}]
             ]],
         ['Clone', 'Clone a DB virtual machine', [
             ['id', 'Existing DB virtual machine ID, as returned by "ORDB List"', {'type' : int}],

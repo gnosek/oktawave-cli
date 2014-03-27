@@ -259,7 +259,7 @@ class OktawaveCli(object):
         if not args.oci_class:
             args.oci_class = None
         try:
-            self.api.OCI_Create(args.name, args.template, args.oci_class, forced_type, db_type)
+            self.api.OCI_Create(args.name, args.template, args.oci_class, args.subregion, forced_type, db_type)
         except OktawaveOCIClassNotFound:
             print "OCI class not found"
 
@@ -401,7 +401,7 @@ class OktawaveCli(object):
 
     def OVS_Create(self, args):
         """Adds a disk"""
-        self.api.OVS_Create(args.name, args.capacity, args.tier, (args.disktype=='shared'))
+        self.api.OVS_Create(args.name, args.capacity, args.tier, (args.disktype=='shared'), args.subregion)
         print "OK"
 
     def OVS_Map(self, args):
@@ -509,7 +509,7 @@ class OktawaveCli(object):
     def ORDB_Create(self, args):
         """Creates a database VM"""
         try:
-            self.api.ORDB_Create(args.name, args.template, args.oci_class)
+            self.api.ORDB_Create(args.name, args.template, oci_class=None, subregion=args.subregion)
         except OktawaveORDBInvalidTemplateError:
             print "ERROR: Selected template is not a database template"
             return 1

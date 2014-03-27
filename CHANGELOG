@@ -44,3 +44,14 @@
 - Using HTTP/JSON API requests instead of SOAP - much faster
 - Added Containers and OPN namespaces
 - Major code refactoring and cleanup
+
+0.8.1
+- allowing LRT algorithm in HTTP(S) only (Container Create)
+
+0.8.2
+- fixed OCS Put and CreateContainer methods
+
+0.8.3
+- added subregion option where applicable (Create methods in OCI, OVS and ORDB)
+- fixed ORDB Create
+- fixed Account RunningJobs when returing nonempty result
