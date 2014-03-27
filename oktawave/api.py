@@ -484,7 +484,14 @@ class OktawaveApi(object):
         self.clients.call(
             'UpdateVirtualMachine', machine=oci, clientId=self.client_id, classChangeInScheduler=at_midnight)
 
-    def OCI_Create(self, name, template, oci_class=None, forced_type=TemplateType.Machine, db_type=None):
+    def _subregion_id(self, subregion):
+        if str(subregion) == 'Auto':
+            return None
+        if str(subregion) == '1':
+            return 1
+        return 4
+
+    def OCI_Create(self, name, template, oci_class=None, forced_type=TemplateType.Machine, db_type=None, subregion='Auto'):
         """Creates a new instance from template"""
         self._logon()
         oci_class_id = None
@@ -507,7 +514,8 @@ class OktawaveApi(object):
                           vAppType=forced_type,
                           databaseTypeId=db_type,
                           clientVmParameter=None,
-                          autoScalingTypeId=DICT['OCI_AUTOSCALING_ID']
+                          autoScalingTypeId=DICT['OCI_AUTOSCALING_ID'],
+                          clusterId=self._subregion_id(subregion)
                           )
 
     def OCI_Clone(self, oci_id, name, clonetype):
@@ -555,7 +563,7 @@ class OktawaveApi(object):
         if not res:
             raise OktawaveOVSDeleteError()
 
-    def OVS_Create(self, name, capacity_gb, tier, shared):
+    def OVS_Create(self, name, capacity_gb, tier, shared, subregion='Auto'):
         """Adds a disk"""
         self._logon()
         disk = {
@@ -565,6 +573,7 @@ class OktawaveApi(object):
             'IsShared': shared,
             'PaymentTypeId': DICT['OVS_PAYMENT_ID'],
             'VirtualMachineIds': [],
+            'ClusterId': self._subregion_id(subregion)
         }
         self.clients.call('CreateDisk', clientHdd=disk, clientId=self.client_id)
 
@@ -698,14 +707,17 @@ class OktawaveApi(object):
 
     ORDB_Settings = OCI_Settings
 
-    def ORDB_Create(self, name, template, oci_class=None):
+    def ORDB_Create(self, name, template, oci_class=None, subregion='Auto'):
         """Creates a database VM"""
         self._logon()
         data = self.clients.call('GetTemplate', templateId=template, clientId=self.client_id)
         if str(data['TemplateType']['DictionaryItemId']) != str(DICT['DB_VM_CATEGORY']):
             raise OktawaveORDBInvalidTemplateError()
         self.OCI_Create(name, template,
-                        forced_type=TemplateType.Database, db_type=data.DatabaseType.DictionaryItemId)
+                        forced_type=TemplateType.Database,
+                        db_type=data['DatabaseType']['DictionaryItemId'],
+                        subregion=subregion,
+                        oci_class=oci_class)
 
     def ORDB_GlobalSettings(self, oci_id):
         """Shows global database engine settings"""
