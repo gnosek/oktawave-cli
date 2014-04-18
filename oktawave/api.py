@@ -198,9 +198,6 @@ class OktawaveApi(object):
             if item.name == key:
                 return item
 
-    def _any_dict_item(self, dict_item_id):
-        return DictionaryItem(self.common.call('GetDictionaryItemById', dictionaryItemId=dict_item_id))
-
     def _oci_class(self, class_name):
         """Returns a dictionary item for OCI class with a given name"""
         return self._dict_item(DICT['OCI_CLASSES_DICT_ID'], class_name)
@@ -286,7 +283,7 @@ class OktawaveApi(object):
                 'object_type': op['ObjectTypeName'],
                 'object_name': op['ObjectName'],
                 'progress_percent': op['Progress'],
-                'status': self._any_dict_item(op['StatusId'])
+                'status': op['StatusName']
             }
 
     def Account_Users(self):
