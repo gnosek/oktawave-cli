@@ -494,7 +494,7 @@ class OktawaveApi(object):
             return 1
         return 4
 
-    def OCI_Create(self, name, template, oci_class=None, subregion='Auto', forced_type=TemplateType.Machine, db_type=None):
+    def OCI_Create(self, name, template, oci_class=None, forced_type=TemplateType.Machine, db_type=None, subregion='Auto'):
         """Creates a new instance from template"""
         self._logon()
         oci_class_id = None

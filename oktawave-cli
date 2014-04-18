@@ -214,6 +214,7 @@ if(__name__ == '__main__'):
         ['Create', 'Create a new database VM instance from template', [
             ['template', 'Template ID, as returned by "ORDB Templates"', {'type' : int}],
             ['name', 'Database VM name'],
+            ['oci_class', 'OCI class name, for example "Small" or "Extreme". If not specified, the minimal class for the template is used.', {'nargs' : '?'}],
             ['subregion', 'Subregion: 1 for PL-001, 2 for PL-002 or Auto (the default)', {'nargs' : '?', 'choices' : ['1', '2', 'Auto'], 'default' : 'Auto'}]
             ]],
         ['Clone', 'Clone a DB virtual machine', [
