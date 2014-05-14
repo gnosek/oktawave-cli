@@ -3,6 +3,17 @@ import requests
 import datetime
 import pprint
 
+from oktawave.exceptions import OktawaveAPIError
+
+def parse_api_error(fault_text):
+    import xml.etree.cElementTree as etree
+    xmlns = '{http://schemas.datacontract.org/2004/07/K2.CloudsFactory.Common.Communication.Models}'
+
+    resp = etree.fromstring(fault_text)
+    error_code = int(resp.find('.//{0}ErrorCode'.format(xmlns)).text)
+    error_msg = resp.find('.//{0}ErrorMsg'.format(xmlns)).text
+    return error_code, error_msg
+
 class ApiClient(object):
 
     def __init__(self, url, username, password, debug=False):
@@ -23,6 +34,13 @@ class ApiClient(object):
             pprint.pprint(req)
             print '-- response --'
             pprint.pprint(resp.content)
+        if resp.status_code == 500:
+            try:
+                api_error, api_msg = parse_api_error(resp.content)
+            except (AttributeError, ValueError):
+                pass
+            else:
+                raise OktawaveAPIError(api_error, api_msg)
         resp.raise_for_status()
         parsed = resp.json()
         if self.debug:

@@ -48,3 +48,14 @@ class OktawaveOCINotInOPN(ValueError):
 
 class OktawaveLRTNotAllowed(ValueError):
     pass
+
+class OktawaveAPIError(RuntimeError):
+
+    OCI_PENDING_OPS = 133  # Maszyna wirtualna jest zablokowana przez zlecone zadanie
+
+    def __init__(self, code, error_msg):
+        self.code = code
+        self.error_msg = error_msg
+
+    def __str__(self):
+        return '[{0}] {1}'.format(self.code, self.error_msg)
