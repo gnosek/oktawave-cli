@@ -51,22 +51,11 @@ class PowerStatus(object):
         else:
             return 'unknown status #%d' % self.status
 
-class DictionaryItem(object):
-    LANGUAGE_ID = 2
-    ITEM_ID_FIELD = 'DictionaryItemId'
-    NAME_LIST_FIELD = 'DictionaryItemNames'
-    NAME_FIELD = 'ItemName'
+class RawDictionaryItem(object):
 
-    def _dict_names(self, data, field):
-        return [item[field] for item in data if item['LanguageDictId'] == self.LANGUAGE_ID]
-
-    def _dict_item_name(self, data):
-        return self._dict_names(data[self.NAME_LIST_FIELD], self.NAME_FIELD)[0]
-
-    def __init__(self, item):
-        self.id = item[self.ITEM_ID_FIELD]
-        self.name = self._dict_item_name(item)
-        self.item = item
+    def __init__(self, item_id, name):
+        self.id = item_id
+        self.name = name
 
     def __str__(self):
         return self.name
@@ -84,6 +73,25 @@ class DictionaryItem(object):
 
     def __ne__(self, other):
         return not self == other
+
+
+class DictionaryItem(RawDictionaryItem):
+    LANGUAGE_ID = 2
+    ITEM_ID_FIELD = 'DictionaryItemId'
+    NAME_LIST_FIELD = 'DictionaryItemNames'
+    NAME_FIELD = 'ItemName'
+
+    def _dict_names(self, data, field):
+        return [item[field] for item in data if item['LanguageDictId'] == self.LANGUAGE_ID]
+
+    def _dict_item_name(self, data):
+        return self._dict_names(data[self.NAME_LIST_FIELD], self.NAME_FIELD)[0]
+
+    def __init__(self, item):
+        item_id = item[self.ITEM_ID_FIELD]
+        name = self._dict_item_name(item)
+        super(DictionaryItem, self).__init__(item_id, name)
+
 
 class TemplateCategory(DictionaryItem):
     ITEM_ID_FIELD = 'TemplateCategoryId'
@@ -279,11 +287,11 @@ class OktawaveApi(object):
                 'id': op['AsynchronousOperationId'],
                 'creation_date': op['CreationDate'],
                 'creation_user_name': op['CreationUserFullName'],
-                'type': DictionaryItem(op['OperationType']),
-                'object_type': DictionaryItem(op['ObjectType']),
+                'type': RawDictionaryItem(op['OperationTypeId'], op['OperationTypeName']),
+                'object_type': RawDictionaryItem(op['ObjectTypeId', op['ObjectTypeName']]),
                 'object_name': op['ObjectName'],
                 'progress_percent': op['Progress'],
-                'status': DictionaryItem(op['Status'])
+                'status': RawDictionaryItem(op['StatusId'], op['StatusName'])
             }
 
     def Account_Users(self):
