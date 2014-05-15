@@ -288,7 +288,7 @@ class OktawaveApi(object):
                 'creation_date': op['CreationDate'],
                 'creation_user_name': op['CreationUserFullName'],
                 'type': RawDictionaryItem(op['OperationTypeId'], op['OperationTypeName']),
-                'object_type': RawDictionaryItem(op['ObjectTypeId', op['ObjectTypeName']]),
+                'object_type': RawDictionaryItem(op['ObjectTypeId'], op['ObjectTypeName']),
                 'object_name': op['ObjectName'],
                 'progress_percent': op['Progress'],
                 'status': RawDictionaryItem(op['StatusId'], op['StatusName'])
