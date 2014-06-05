@@ -91,6 +91,9 @@ class DictionaryItem(RawDictionaryItem):
         item_id = item[self.ITEM_ID_FIELD]
         name = self._dict_item_name(item)
         super(DictionaryItem, self).__init__(item_id, name)
+        self.item = {
+            self.ITEM_ID_FIELD: item_id,
+        }
 
 
 class TemplateCategory(DictionaryItem):
