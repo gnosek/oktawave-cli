@@ -174,7 +174,7 @@ class OktawaveApi(object):
                 userAgent="Oktawave CLI")
         except AttributeError:
             raise OktawaveLoginError()
-        self.client_id = res['Client']['ClientId']
+        self.client_id = res['User']['Client']['ClientId']
         self.client_object = res
         return res
 
