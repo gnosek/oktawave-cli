@@ -42,7 +42,7 @@ class ApiClient(object):
             else:
                 raise OktawaveAPIError(api_error, api_msg)
         resp.raise_for_status()
-        parsed = json.loads(resp.content)
+        parsed = resp.json()
         if self.debug:
             pprint.pprint(parsed)
         if len(parsed) == 1:
