@@ -58,3 +58,6 @@
 
 0.8.4
 - optimization in Account RunningJobs
+
+0.8.5
+- updated available OCI classes
