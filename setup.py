@@ -8,7 +8,7 @@ setup(name='oktawave-cli',
       packages=['oktawave'],
       scripts=['oktawave-cli'],
       url='http://oktawave.com',
-      install_requires=['requests', 'python-swiftclient',
+      install_requires=['requests>=0.12.1', 'python-swiftclient',
                         'argparse', 'setproctitle', 'prettytable'],
       license='GPLv3',
       )
