@@ -391,8 +391,16 @@ class OktawaveApi(object):
         """Restarts given VM"""
         self._simple_vm_method('RestartVirtualMachine', oci_id)
 
-    def OCI_TurnOff(self, oci_id):
+    def OCI_TurnOff(self, oci_id, force=False):
         """Turns given VM off"""
+        if not force:
+            try:
+                self._simple_vm_method('ShutdownVirtualMachine', oci_id)
+                return
+            except OktawaveAPIError:
+                # XXX: swallow only the "clean shutdown not supported" exception
+                pass
+
         self._simple_vm_method('TurnoffVirtualMachine', oci_id)
 
     def OCI_TurnOn(self, oci_id):
