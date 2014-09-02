@@ -3,22 +3,36 @@ import requests
 import datetime
 import pprint
 
-from oktawave.exceptions import OktawaveAPIError
+from oktawave.exceptions import OktawaveAPIError, OktawaveAccessDenied, OktawaveFault
 
-def parse_api_error(fault_text):
+def raise_api_error(fault_text):
     import xml.etree.cElementTree as etree
-    xmlns = '{http://schemas.datacontract.org/2004/07/K2.CloudsFactory.Common.Communication.Models}'
+    ws_xmlns = '{http://schemas.microsoft.com/ws/2005/05/envelope/none}'
+    k2_xmlns = '{http://schemas.datacontract.org/2004/07/K2.CloudsFactory.Common.Communication.Models}'
 
     resp = etree.fromstring(fault_text)
-    error_code = int(resp.find('.//{0}ErrorCode'.format(xmlns)).text)
-    error_msg = resp.find('.//{0}ErrorMsg'.format(xmlns)).text
-    return error_code, error_msg
+    auth_error = resp.find('.//{0}Detail/{1}AuthorizationErrorDescription'.format(ws_xmlns, k2_xmlns))
+    if auth_error:
+        error_msg = auth_error.find('.//{0}ErrorMsg'.format(k2_xmlns)).text
+        raise OktawaveAccessDenied(error_msg)
+
+    error_code = resp.find('.//{0}ErrorCode'.format(k2_xmlns))
+    error_msg = resp.find('.//{0}ErrorMsg'.format(k2_xmlns))
+    if error_code is not None and error_msg is not None:
+        error_code = int(error_code.text)
+        error_msg = error_msg.text
+        raise OktawaveAPIError(error_code, error_msg)
+
+    error_msg = resp.find('.//{0}Text'.format(ws_xmlns))
+    if error_msg is not None:
+        raise OktawaveFault(error_msg.text)
+
 
 class ApiClient(object):
 
     def __init__(self, url, username, password, debug=False):
         if not url.endswith('/'):
-            url = url + '/'
+            url += '/'
         self.url = url
         session = requests.session()
         session.auth = ('API\\' + username, password)
@@ -35,12 +49,7 @@ class ApiClient(object):
             print '-- response --'
             pprint.pprint(resp.content)
         if resp.status_code == 500:
-            try:
-                api_error, api_msg = parse_api_error(resp.content)
-            except (AttributeError, ValueError):
-                pass
-            else:
-                raise OktawaveAPIError(api_error, api_msg)
+            raise_api_error(resp.content)
         resp.raise_for_status()
         parsed = resp.json()
         if self.debug:
