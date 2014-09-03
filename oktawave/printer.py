@@ -1,9 +1,9 @@
 import sys
+
 from prettytable import PrettyTable
 
 
 class Printer:
-
     def __init__(self, output=sys.stdout):
         self.output = output
 
@@ -28,18 +28,23 @@ class Printer:
         for i in xrange(hmarg):
             self._print('')
 
-    def _swift_object_type(self, data):
+    @classmethod
+    def _swift_object_type(cls, data):
         if data['content_type'] == 'application/directory':
             return 'directory'
         if data['content_type'] == 'application/object':
             return 'object'
         return 'file'
 
-    def print_hash_table(self, data, headers=[], order=False):
-        def ext(k):
-            res = [k if not order else k.partition(' ')[2]]
-            res.extend(data[k])
+    def print_hash_table(self, data, headers=None, order=False):
+        if headers is None:
+            headers = []
+
+        def ext(key):
+            res = [key if not order else key.partition(' ')[2]]
+            res.extend(data[key])
             return res
+
         data_array = [headers] if len(headers) > 0 else []
         keys = data.keys()
         if order:
@@ -49,14 +54,15 @@ class Printer:
         self.print_table(data_array)
 
     def list_swift_objects(self, container, path=None, cname=''):
-        if path == None:
+        if path is None:
             path = ''
         elif not path.endswith('/'):
-            path = path + '/'
-        if str(container.__class__) == "<type 'tuple'>":
+            path += '/'
+        if isinstance(container, tuple):
             container = container[1]
         data = container
-        if len([1 for d in data if d['content_type'] == 'application/directory' and d['name'] + '/' == path]) == 0 and path != '':
+        if len([1 for d in data if
+                d['content_type'] == 'application/directory' and d['name'] + '/' == path]) == 0 and path != '':
             print "No such container/directory!"
             return
         print ('Container' if path == '' else 'Directory') + " content:"
@@ -65,12 +71,14 @@ class Printer:
             [
                 [(row[0][len(path):].count('/') * '  ')
                  + row[0].rpartition('/')[2]] + row[1:]
-                for row in sorted([[o['name'], self._swift_object_type(o), o['bytes'], cname + '/' + o['name']] for o in data], key=lambda row: row[0]) if row[0].startswith(path)
+                for row in
+                sorted([[o['name'], self._swift_object_type(o), o['bytes'], cname + '/' + o['name']] for o in data],
+                       key=lambda row: row[0]) if row[0].startswith(path)
             ]
         )
 
     def print_swift_file(self, data):
-        if str(data.__class__) == "<type 'tuple'>" and len(data) == 2:
+        if isinstance(data, tuple) and len(data) == 2:
             d = data[0]
             attrs = dict((key[14:], d[key])
                          for key in d.keys() if key[0:13] == 'x-object-meta')
