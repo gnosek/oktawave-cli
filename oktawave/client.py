@@ -1,16 +1,19 @@
 import json
-import requests
 import datetime
 import pprint
 
+import requests
+
 from oktawave.exceptions import OktawaveAPIError, OktawaveAccessDenied, OktawaveFault
 
+
 def raise_api_error(fault_text):
-    import xml.etree.cElementTree as etree
+    from xml.etree import cElementTree
+
     ws_xmlns = '{http://schemas.microsoft.com/ws/2005/05/envelope/none}'
     k2_xmlns = '{http://schemas.datacontract.org/2004/07/K2.CloudsFactory.Common.Communication.Models}'
 
-    resp = etree.fromstring(fault_text)
+    resp = cElementTree.fromstring(fault_text)
     auth_error = resp.find('.//{0}Detail/{1}AuthorizationErrorDescription'.format(ws_xmlns, k2_xmlns))
     if auth_error:
         error_msg = auth_error.find('.//{0}ErrorMsg'.format(k2_xmlns)).text
@@ -29,7 +32,6 @@ def raise_api_error(fault_text):
 
 
 class ApiClient(object):
-
     def __init__(self, url, username, password, debug=False):
         if not url.endswith('/'):
             url += '/'
@@ -58,12 +60,13 @@ class ApiClient(object):
             return parsed.values().pop()
         return parsed
 
-    def parse_date(self, value):
+    @classmethod
+    def parse_date(cls, value):
         assert value.startswith('/Date(')
         plus = value.index('+')
         timestamp = int(value[len('/Date('):plus]) / 1000
-        tz_hour = int(value[plus+1:plus+3])
-        tz_min = int(value[plus+3:plus+5])
+        tz_hour = int(value[plus + 1:plus + 3])
+        tz_min = int(value[plus + 3:plus + 5])
 
         timestamp += 3600 * tz_hour + 60 * tz_min
         return datetime.datetime.fromtimestamp(timestamp)

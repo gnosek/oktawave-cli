@@ -1,3 +1,6 @@
+import sys
+import os
+
 from oktawave.api import (
     OktawaveApi,
     OCSConnection,
@@ -8,8 +11,6 @@ from oktawave.api import (
 )
 from oktawave.exceptions import *
 from oktawave.printer import Printer
-import sys
-import os
 
 
 class OktawaveNameNotFound(ValueError):
@@ -21,7 +22,6 @@ class OktawaveDuplicateName(ValueError):
 
 
 class NamedItemId(object):
-
     def __init__(self, item_id):
         self.item_id = item_id
 
@@ -49,7 +49,6 @@ class NamedItemId(object):
 
 
 class OCIid(NamedItemId):
-
     @classmethod
     def list_items(cls, api):
         for item in api.OCI_List():
@@ -57,7 +56,6 @@ class OCIid(NamedItemId):
 
 
 class ORDBid(NamedItemId):
-
     @classmethod
     def list_items(cls, api):
         for item in api.ORDB_List():
@@ -65,7 +63,6 @@ class ORDBid(NamedItemId):
 
 
 class OPNid(NamedItemId):
-
     @classmethod
     def list_items(cls, api):
         for item in api.OPN_List():
@@ -73,7 +70,6 @@ class OPNid(NamedItemId):
 
 
 class OVSid(NamedItemId):
-
     @classmethod
     def list_items(cls, api):
         for item in api.OVS_List():
@@ -81,7 +77,6 @@ class OVSid(NamedItemId):
 
 
 class ContainerId(NamedItemId):
-
     @classmethod
     def list_items(cls, api):
         for item in api.Container_List():
@@ -89,7 +84,6 @@ class ContainerId(NamedItemId):
 
 
 class OktawaveCli(object):
-
     def __init__(self, args, debug=False, output=sys.stdout):
         self.p = Printer(output)
         self.api = OktawaveApi(
@@ -131,6 +125,7 @@ class OktawaveCli(object):
 
     def Account_RunningJobs(self, args):
         ops = self.api.Account_RunningJobs()
+
         def fmt(op):
             return [
                 op['id'],
@@ -141,14 +136,16 @@ class OktawaveCli(object):
                 '%(progress_percent)d%%' % op,
                 op['status']
             ]
+
         if not self._print_table(
-            ['Operation ID', 'Started at', 'Started by', 'Operation type', 'Object', 'Progress', 'Status'],
-            ops, fmt):
+                ['Operation ID', 'Started at', 'Started by', 'Operation type', 'Object', 'Progress', 'Status'],
+                ops, fmt):
             print "No running operations"
 
     def Account_Users(self, args):
         """Print users in client account."""
         users = self.api.Account_Users()
+
         def fmt(user):
             return [
                 self.api.client_id,
@@ -163,6 +160,7 @@ class OktawaveCli(object):
     def OCI_TemplateCategories(self, args):
         """Lists available template categories"""
         cats = self.api.OCI_TemplateCategories()
+
         def fmt(cat):
             tc_id = cat.id
             if cat.parent_id is not None:
@@ -211,6 +209,7 @@ class OktawaveCli(object):
     def OCI_List(self, args):
         """Lists client's virtual machines"""
         vms = self.api.OCI_List()
+
         def fmt(vm):
             return [vm['id'], vm['name'], vm['status']]
 
@@ -220,6 +219,7 @@ class OktawaveCli(object):
     def OCI_ListDetails(self, args):
         """Lists client's virtual machines"""
         vms = self.api.OCI_ListDetails()
+
         def fmt(vm):
             return [vm['id'], vm['name'], vm['status'], vm['class_name'],
                     '%d/%d MHz' % (vm['cpu_usage_mhz'], vm['cpu_mhz']),
@@ -301,6 +301,7 @@ class OktawaveCli(object):
                 'Yes' if disk['is_primary'] else 'No',
                 'Yes' if disk['is_shared'] else 'No'
             ]
+
         self.p._print("Hard disks")
         self._print_table(
             ['ID', 'Name', 'Capacity (GB)', 'Created at', 'Created by', 'Primary', 'Shared'],
@@ -317,20 +318,22 @@ class OktawaveCli(object):
                 ip['last_change_date'],
                 ip['macaddr']
             ]
+
         self.p._print("IP addresses")
         self._print_table([
-            'IPv4 address',
-            'IPv6 address',
-            'Created at',
-            'DHCP branch',
-            'Gateway',
-            'Status',
-            'Last changed',
-            'MAC address'
-            ], settings['ips'], fmt_ip)
+                              'IPv4 address',
+                              'IPv6 address',
+                              'Created at',
+                              'DHCP branch',
+                              'Gateway',
+                              'Status',
+                              'Last changed',
+                              'MAC address'
+                          ], settings['ips'], fmt_ip)
 
         if settings['vlans']:
             self.p._print("Private vlans")
+
             def fmt_vlan(vlan):
                 return [
                     vlan['ipv4'],
@@ -370,21 +373,21 @@ class OktawaveCli(object):
     def OCI_ping(self, args):
         oci_id = self._name_to_id(args.id)
         ip = self._oci_ip(oci_id)
-        os.execvp('ping', ('ping', ip)+tuple(args.exec_args))
+        os.execvp('ping', ('ping', ip) + tuple(args.exec_args))
 
     def OCI_ssh(self, args):
         oci_id = self._name_to_id(args.id)
         ip = self._oci_ip(oci_id)
         print 'Default OCI password: %s' % self.api.OCI_DefaultPassword(oci_id)
         remote = '%s@%s' % (args.user, ip)
-        os.execvp('ssh', ('ssh', remote)+tuple(args.exec_args))
+        os.execvp('ssh', ('ssh', remote) + tuple(args.exec_args))
 
     def OCI_ssh_copy_id(self, args):
         oci_id = self._name_to_id(args.id)
         ip = self._oci_ip(oci_id)
         print 'Default OCI password: %s' % self.api.OCI_DefaultPassword(oci_id)
         remote = '%s@%s' % (args.user, ip)
-        os.execvp('ssh-copy-id', ('ssh-copy-id', remote)+tuple(args.exec_args))
+        os.execvp('ssh-copy-id', ('ssh-copy-id', remote) + tuple(args.exec_args))
 
     def _ocs_split_params(self, args):
         container = args.container
@@ -496,7 +499,7 @@ class OktawaveCli(object):
 
     def OVS_Create(self, args):
         """Adds a disk"""
-        self.api.OVS_Create(args.name, args.capacity, args.tier, (args.disktype=='shared'), args.subregion)
+        self.api.OVS_Create(args.name, args.capacity, args.tier, (args.disktype == 'shared'), args.subregion)
         print "OK"
 
     def OVS_Map(self, args):
@@ -550,6 +553,7 @@ class OktawaveCli(object):
     def ORDB_List(self, args):
         """Lists databases"""
         dbs = self.api.ORDB_List()
+
         def fmt(db):
             return [
                 db['id'],
@@ -558,6 +562,7 @@ class OktawaveCli(object):
                 db['size'],
                 db['available_space']
             ]
+
         self._print_table(
             ['Virtual machine ID', 'Name', 'Type', 'Size', 'Available space'],
             dbs, fmt)
@@ -605,6 +610,7 @@ class OktawaveCli(object):
                 db['QPS'],
                 db['Size']
             ]
+
         self._print_table(
             ['Virtual machine ID', 'Name', 'Type', 'Encoding', 'Running', 'QPS', 'Size'],
             dbs, fmt)
@@ -628,6 +634,7 @@ class OktawaveCli(object):
 
         def fmt(item):
             return [item['name'], item['value']]
+
         self._print_table(['Name', 'Value'], settings, fmt)
 
     def ORDB_Templates(self, args):
@@ -665,6 +672,7 @@ class OktawaveCli(object):
     def ORDB_Backups(self, args):
         """Lists logical database backups"""
         backups = self.api.ORDB_Backups()
+
         def fmt(b):
             return [b['file_name'], b['type'], b['path']]
 
@@ -678,10 +686,10 @@ class OktawaveCli(object):
         self.api.ORDB_RestoreLogicalDatabase(oci_id, args.name, args.backup_file)
         print "OK"
 
-
     def Container_List(self, args):
         """Lists client's containers"""
         containers = self.api.Container_List()
+
         def fmt(c):
             return [c['id'], c['name'], c['vms']]
 
@@ -717,7 +725,8 @@ class OktawaveCli(object):
             base_tab.append(['IPv4 addresses', ipv4])
             base_tab.append(['IPv6 addresses', ipv6])
         if c['master_service_id'] is not None:
-            base_tab.extend([['Master OCI (MySQL)', c['master_service_name'] + ' (' + str(c['master_service_id']) + ')']])
+            base_tab.extend(
+                [['Master OCI (MySQL)', c['master_service_name'] + ' (' + str(c['master_service_id']) + ')']])
         if c['db_user'] is not None:
             base_tab.extend([['Database user', c['db_user']]])
         if c['db_password'] is not None:
@@ -729,6 +738,7 @@ class OktawaveCli(object):
 
         def fmt_oci(oci):
             return [oci['oci_id'], oci['oci_name'], oci['status']]
+
         self.p._print('\nAttached OCIs')
         self._print_table(
             ['ID', 'Name', 'Status'], oci_list, fmt_oci)
@@ -777,6 +787,7 @@ class OktawaveCli(object):
     def OPN_List(self, args):
         """Lists client's private networks"""
         vlans = self.api.OPN_List()
+
         def fmt(c):
             return [c['id'], c['name'], c['address_pool'], c['payment_type']]
 
@@ -806,10 +817,10 @@ class OktawaveCli(object):
         ] for vm in c['vms']])
         self.p._print('Virtual machines')
         self.p.print_table(vm_tab)
-        
+
     def OPN_Create(self, args):
         """Creates a new OPN"""
-        c = self.api.OPN_Create(args.name, args.address_pool)
+        self.api.OPN_Create(args.name, args.address_pool)
         print "OK"
 
     def OPN_AddOCI(self, args):
@@ -837,5 +848,4 @@ class OktawaveCli(object):
         opn_id = self._name_to_id(args.id)
         self.api.OPN_Rename(opn_id, args.name)
         print "OK"
-
 
