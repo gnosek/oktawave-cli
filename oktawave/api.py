@@ -674,18 +674,9 @@ class OktawaveApi(object):
                 'available_space': db['AvailableSpace'],
             }
 
-    def ORDB_TurnOn(self, oci_id):
-        """Turns a database on"""
-        self._simple_vm_method('TurnOnVirtualMachine', oci_id)
-
-    def ORDB_TurnOff(self, oci_id):
-        """Turns a database off"""
-        self._simple_vm_method('TurnoffVirtualMachine', oci_id)
-
-    def ORDB_Restart(self, oci_id):
-        """Restarts a database"""
-        self._simple_vm_method('RestartVirtualMachine', oci_id)
-
+    ORDB_TurnOn = OCI_TurnOn
+    ORDB_TurnOff = OCI_TurnOff
+    ORDB_Restart = OCI_Restart
     ORDB_Clone = OCI_Clone
 
     def ORDB_Delete(self, oci_id, db_name=None):
