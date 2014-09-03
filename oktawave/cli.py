@@ -398,6 +398,61 @@ class OktawaveCli(object):
                 path = None
         return container, path
 
+    @classmethod
+    def _swift_object_type(cls, data):
+        if data['content_type'] == 'application/directory':
+            return 'directory'
+        if data['content_type'] == 'application/object':
+            return 'object'
+        return data['content_type']
+
+    def _list_swift_objects(self, container, cname, path=None):
+        if path is None:
+            path = ''
+        elif not path.endswith('/'):
+            path += '/'
+        container = container[1]
+
+        if path:
+            for d in container:
+                if d['content_type'] == 'application/directory' and d['name'] + '/' == path:
+                    print 'Directory content:'
+                    break
+            else:
+                print "No such container/directory!"
+                return
+        else:
+            print 'Container content:'
+
+        def fmt_file(swift_obj):
+            return [
+                cname + '/' + swift_obj['name'],
+                self._swift_object_type(swift_obj),
+                swift_obj['bytes'],
+                swift_obj['last_modified'],
+            ]
+
+        self._print_table(
+            ['Full path', 'Type', 'Size in bytes', 'Last modified'],
+            sorted([o for o in container if o['name'].startswith(path)], key=lambda row: row['name']),
+            fmt_file)
+
+    def _print_swift_file(self, data):
+        headers, content = data
+        ctype = headers['content-type']
+
+        if ctype == 'application/directory':
+            print '<DIRECTORY>'
+        elif ctype == 'application/object':
+            attrs = dict((key[len('x-object-meta-'):], headers[key])
+                         for key in headers if key.startswith('x-object-meta-'))
+            self.p.print_table([['Key', 'Value']] + [[
+                key,
+                attrs[key]
+            ] for key in sorted(attrs.keys(), key=lambda x: x.lower())])
+        else:
+            print content
+
     def OCS_ListContainers(self, args):
         """Lists containers"""
         headers, containers = self.ocs.get_account()
@@ -410,9 +465,16 @@ class OktawaveCli(object):
         """Gets an object or file"""
         container, path = self._ocs_split_params(args)
         if path is None:
-            self.p.print_swift_container(self.ocs.get_container(container))
+            headers, contents = self.ocs.get_container(container)
+            self.p.print_hash_table(
+                {
+                    '1 Container name': [container],
+                    '2 Objects count': [headers['x-container-object-count']],
+                    '3 Size in bytes': [headers['x-container-bytes-used']],
+                },
+                order=True)
         else:
-            self.p.print_swift_file(
+            self._print_swift_file(
                 self.ocs.get_object(container, path))
 
     def OCS_List(self, args):
@@ -420,7 +482,7 @@ class OktawaveCli(object):
         container, path = self._ocs_split_params(args)
         obj = self.ocs.get_container(
             container)  # TODO: perhaps we can optimize it not to download the whole container when not necessary
-        self.p.list_swift_objects(obj, path, cname=container)
+        self._list_swift_objects(obj, container, path)
 
     def OCS_CreateContainer(self, args):
         """Creates a new container"""
