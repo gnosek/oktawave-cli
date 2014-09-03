@@ -641,7 +641,7 @@ class OktawaveCli(object):
 
     def ORDB_TemplateInfo(self, args):
         """Shows information about a template"""
-        self.OCI_TemplateInfo(args, category_id=OktawaveConstants['DB_VM_CATEGORY'])
+        self.OCI_TemplateInfo(args)
 
     def ORDB_CreateLogicalDatabase(self, args):
         """Creates a new logical database within an instance"""
