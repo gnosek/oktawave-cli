@@ -11,6 +11,83 @@ from oktawave.printer import Printer
 import sys
 import os
 
+
+class OktawaveNameNotFound(ValueError):
+    pass
+
+
+class OktawaveDuplicateName(ValueError):
+    pass
+
+
+class NamedItemId(object):
+
+    def __init__(self, item_id):
+        self.item_id = item_id
+
+    @classmethod
+    def list_items(cls, api):
+        raise NotImplementedError()
+
+    def as_int(self, api):
+        try:
+            return int(self.item_id)
+        except ValueError:
+            pass
+
+        found_item_id = None
+        for item_id, item_name in self.list_items(api):
+            if item_name == self.item_id:
+                if found_item_id is not None:
+                    raise OktawaveDuplicateName()
+                found_item_id = item_id
+
+        if found_item_id is None:
+            raise OktawaveNameNotFound()
+
+        return found_item_id
+
+
+class OCIid(NamedItemId):
+
+    @classmethod
+    def list_items(cls, api):
+        for item in api.OCI_List():
+            yield item['id'], item['name']
+
+
+class ORDBid(NamedItemId):
+
+    @classmethod
+    def list_items(cls, api):
+        for item in api.ORDB_List():
+            yield item['id'], item['name']
+
+
+class OPNid(NamedItemId):
+
+    @classmethod
+    def list_items(cls, api):
+        for item in api.OPN_List():
+            yield item['id'], item['name']
+
+
+class OVSid(NamedItemId):
+
+    @classmethod
+    def list_items(cls, api):
+        for item in api.OVS_List():
+            yield item['id'], item['name']
+
+
+class ContainerId(NamedItemId):
+
+    @classmethod
+    def list_items(cls, api):
+        for item in api.Container_List():
+            yield item['id'], item['name']
+
+
 class OktawaveCli(object):
 
     def __init__(self, args, debug=False, output=sys.stdout):
@@ -33,6 +110,11 @@ class OktawaveCli(object):
             self.p.print_table([head] + items)
             return True
         return False
+
+    def _name_to_id(self, name_or_id):
+        if isinstance(name_or_id, int):
+            return name_or_id
+        return name_or_id.as_int(self.api)
 
     def Account_Settings(self, args):
         res = self.api.Account_Settings()
@@ -148,23 +230,29 @@ class OktawaveCli(object):
 
     def OCI_Restart(self, args):
         """Restarts given VM"""
-        self.api.OCI_Restart(args.id)
+        oci_id = self._name_to_id(args.id)
+        self.api.OCI_Restart(oci_id)
 
     def OCI_TurnOff(self, args):
         """Turns given VM off"""
-        self.api.OCI_TurnOff(args.id)
+        oci_id = self._name_to_id(args.id)
+        self.api.OCI_TurnOff(oci_id)
 
     def OCI_TurnOn(self, args):
         """Turns given virtual machine on"""
-        self.api.OCI_TurnOn(args.id)
+        oci_id = self._name_to_id(args.id)
+        self.api.OCI_TurnOn(oci_id)
 
     def OCI_Delete(self, args):
         """Deletes given virtual machine"""
-        self.api.OCI_Delete(args.id)
+        oci_id = self._name_to_id(args.id)
+        self.api.OCI_Delete(oci_id)
 
     def OCI_Logs(self, args):
         """Shows virtual machine logs"""
-        logs = self.api.OCI_Logs(args.id)
+        oci_id = self._name_to_id(args.id)
+        logs = self.api.OCI_Logs(oci_id)
+
         def fmt(op):
             return [
                 op['time'],
@@ -180,7 +268,8 @@ class OktawaveCli(object):
 
     def OCI_Settings(self, args):
         """Shows basic VM settings (IP addresses, OS, names, autoscaling etc.)"""
-        settings = self.api.OCI_Settings(args.id)
+        oci_id = self._name_to_id(args.id)
+        settings = self.api.OCI_Settings(oci_id)
 
         base_tab = [['Key', 'Value']]
         base_tab.extend([
@@ -265,30 +354,35 @@ class OktawaveCli(object):
 
     def OCI_ChangeClass(self, args):
         """Changes running VM class"""
-        self.api.OCI_ChangeClass(args.id, args.oci_class)
+        oci_id = self._name_to_id(args.id)
+        self.api.OCI_ChangeClass(oci_id, args.oci_class)
 
     def OCI_Clone(self, args):
         """Clones a VM"""
+        oci_id = self._name_to_id(args.id)
         clonetype = getattr(CloneType, args.clonetype)
-        self.api.OCI_Clone(args.id, args.name, clonetype)
+        self.api.OCI_Clone(oci_id, args.name, clonetype)
 
     def _oci_ip(self, oci_id):
         settings = self.api.OCI_Settings(oci_id)
         return settings['ips'][0]['ipv4']
 
     def OCI_ping(self, args):
-        ip = self._oci_ip(args.id)
+        oci_id = self._name_to_id(args.id)
+        ip = self._oci_ip(oci_id)
         os.execvp('ping', ('ping', ip)+tuple(args.exec_args))
 
     def OCI_ssh(self, args):
-        ip = self._oci_ip(args.id)
-        print 'Default OCI password: %s' % self.api.OCI_DefaultPassword(args.id)
+        oci_id = self._name_to_id(args.id)
+        ip = self._oci_ip(oci_id)
+        print 'Default OCI password: %s' % self.api.OCI_DefaultPassword(oci_id)
         remote = '%s@%s' % (args.user, ip)
         os.execvp('ssh', ('ssh', remote)+tuple(args.exec_args))
 
     def OCI_ssh_copy_id(self, args):
-        ip = self._oci_ip(args.id)
-        print 'Default OCI password: %s' % self.api.OCI_DefaultPassword(args.id)
+        oci_id = self._name_to_id(args.id)
+        ip = self._oci_ip(oci_id)
+        print 'Default OCI password: %s' % self.api.OCI_DefaultPassword(oci_id)
         remote = '%s@%s' % (args.user, ip)
         os.execvp('ssh-copy-id', ('ssh-copy-id', remote)+tuple(args.exec_args))
 
@@ -392,8 +486,9 @@ class OktawaveCli(object):
 
     def OVS_Delete(self, args):
         """Deletes a disk"""
+        ovs_id = self._name_to_id(args.id)
         try:
-            self.api.OVS_Delete(args.id)
+            self.api.OVS_Delete(ovs_id)
         except OktawaveOVSDeleteError:
             print "ERROR: Disk cannot be deleted (is it mapped to any OCI instances?)."
         else:
@@ -406,8 +501,10 @@ class OktawaveCli(object):
 
     def OVS_Map(self, args):
         """Maps a disk into an instance"""
+        ovs_id = self._name_to_id(args.id)
+        oci_id = self._name_to_id(args.oci_id)
         try:
-            self.api.OVS_Map(args.disk_id, args.oci_id)
+            self.api.OVS_Map(ovs_id, oci_id)
         except OktawaveOVSMappedError:
             print "ERROR: Disk is already mapped to this instance"
             return 1
@@ -418,8 +515,10 @@ class OktawaveCli(object):
 
     def OVS_Unmap(self, args):
         """Unmaps a disk from an instance"""
+        ovs_id = self._name_to_id(args.id)
+        oci_id = self._name_to_id(args.oci_id)
         try:
-            self.api.OVS_Unmap(args.disk_id, args.oci_id)
+            self.api.OVS_Unmap(ovs_id, oci_id)
         except OktawaveOVSUnmappedError:
             print "ERROR: Disk is not mapped to this instance"
             return 1
@@ -430,13 +529,15 @@ class OktawaveCli(object):
 
     def OVS_ChangeTier(self, args):
         """Changes OVS tier"""
-        self.api.OVS_ChangeTier(args.disk_id, args.tier)
+        ovs_id = self._name_to_id(args.id)
+        self.api.OVS_ChangeTier(ovs_id, args.tier)
         print "OK"
 
     def OVS_Extend(self, args):
         """Resizes OVS volume"""
+        ovs_id = self._name_to_id(args.id)
         try:
-            self.api.OVS_Extend(args.disk_id, args.size)
+            self.api.OVS_Extend(ovs_id, args.size)
         except OktawaveOVSMappedError:
             print "ERROR: Disk is mapped to an instance"
             return 1
@@ -463,15 +564,18 @@ class OktawaveCli(object):
 
     def ORDB_TurnOn(self, args):
         """Turns a database on"""
-        self.api.ORDB_TurnOn(args.id)
+        oci_id = self._name_to_id(args.id)
+        self.api.ORDB_TurnOn(oci_id)
 
     def ORDB_TurnOff(self, args):
         """Turns a database off"""
-        self.api.ORDB_TurnOff(args.id)
+        oci_id = self._name_to_id(args.id)
+        self.api.ORDB_TurnOff(oci_id)
 
     def ORDB_Restart(self, args):
         """Restarts a database"""
-        self.api.ORDB_Restart(args.id)
+        oci_id = self._name_to_id(args.id)
+        self.api.ORDB_Restart(oci_id)
 
     def ORDB_Clone(self, args):
         """Clones a database VM"""
@@ -479,15 +583,18 @@ class OktawaveCli(object):
 
     def ORDB_Delete(self, args):
         """Deletes a database or VM"""
-        self.api.ORDB_Delete(args.id, args.db_name)
+        oci_id = self._name_to_id(args.id)
+        self.api.ORDB_Delete(oci_id, args.db_name)
 
     def ORDB_Logs(self, args):
         """Shows database VM logs"""
-        self.OCI_Logs()
+        self.OCI_Logs(args)
 
     def ORDB_LogicalDatabases(self, args):
         """Shows logical databases"""
-        dbs = self.api.ORDB_LogicalDatabases(args.id)
+        oci_id = self._name_to_id(args.id)
+        dbs = self.api.ORDB_LogicalDatabases(oci_id)
+
         def fmt(db):
             return [
                 db['id'],
@@ -516,7 +623,9 @@ class OktawaveCli(object):
 
     def ORDB_GlobalSettings(self, args):
         """Shows global database engine settings"""
-        settings = self.api.ORDB_GlobalSettings(args.id)
+        oci_id = self._name_to_id(args.id)
+        settings = self.api.ORDB_GlobalSettings(oci_id)
+
         def fmt(item):
             return [item['name'], item['value']]
         self._print_table(['Name', 'Value'], settings, fmt)
@@ -536,17 +645,21 @@ class OktawaveCli(object):
 
     def ORDB_CreateLogicalDatabase(self, args):
         """Creates a new logical database within an instance"""
-        self.api.ORDB_CreateLogicalDatabase(args.id, args.name, args.encoding)
+        oci_id = self._name_to_id(args.id)
+        self.api.ORDB_CreateLogicalDatabase(oci_id, args.name, args.encoding)
         print "OK"
 
     def ORDB_BackupLogicalDatabase(self, args):
         """Creates a backup of logical database"""
-        self.api.ORDB_BackupLogicalDatabase(args.id, args.name)
+        oci_id = self._name_to_id(args.id)
+        self.api.ORDB_BackupLogicalDatabase(oci_id, args.name)
         print "OK"
 
     def ORDB_MoveLogicalDatabase(self, args):
         """Moves a logical database"""
-        self.api.ORDB_MoveLogicalDatabase(args.id_from, args.id_to, args.name)
+        oci_id_from = self._name_to_id(args.id_from)
+        oci_id_to = self._name_to_id(args.id_to)
+        self.api.ORDB_MoveLogicalDatabase(oci_id_from, oci_id_to, args.name)
         print "OK"
 
     def ORDB_Backups(self, args):
@@ -561,7 +674,8 @@ class OktawaveCli(object):
 
     def ORDB_RestoreLogicalDatabase(self, args):
         """Restores a database from backup"""
-        self.api.ORDB_RestoreLogicalDatabase(args.id, args.name, args.backup_file)
+        oci_id = self._name_to_id(args.id)
+        self.api.ORDB_RestoreLogicalDatabase(oci_id, args.name, args.backup_file)
         print "OK"
 
 
@@ -576,7 +690,8 @@ class OktawaveCli(object):
 
     def Container_Get(self, args):
         """Displays a container's information"""
-        c = self.api.Container_Get(args.id)
+        container_id = self._name_to_id(args.id)
+        c = self.api.Container_Get(container_id)
 
         base_tab = [['Key', 'Value']]
         base_tab.extend([
@@ -610,7 +725,8 @@ class OktawaveCli(object):
         self.p._print('\nBasic container settings')
         self.p.print_table(base_tab)
 
-        oci_list = self.api.Container_OCIList(args.id)
+        oci_list = self.api.Container_OCIList(container_id)
+
         def fmt_oci(oci):
             return [oci['oci_id'], oci['oci_name'], oci['status']]
         self.p._print('\nAttached OCIs')
@@ -619,17 +735,22 @@ class OktawaveCli(object):
 
     def Container_RemoveOCI(self, args):
         """Removes an OCI from a container"""
-        self.api.Container_RemoveOCI(args.id, args.oci_id)
+        container_id = self._name_to_id(args.id)
+        oci_id = self._name_to_id(args.oci_id)
+        self.api.Container_RemoveOCI(container_id, oci_id)
         print "OK"
 
     def Container_AddOCI(self, args):
         """Adds an OCI to a container"""
-        self.api.Container_AddOCI(args.id, args.oci_id)
+        container_id = self._name_to_id(args.id)
+        oci_id = self._name_to_id(args.oci_id)
+        self.api.Container_AddOCI(container_id, oci_id)
         print "OK"
 
     def Container_Delete(self, args):
         """Deletes a container"""
-        self.api.Container_Delete(args.id)
+        container_id = self._name_to_id(args.id)
+        self.api.Container_Delete(container_id)
         print "OK"
 
     def Container_Create(self, args):
@@ -645,8 +766,9 @@ class OktawaveCli(object):
     def Container_Edit(self, args):
         """Modifies a container."""
         self.api._d(args)
+        container_id = self._name_to_id(args.id)
         self.api.Container_Edit(
-            args.id, args.name, args.load_balancer, args.service, args.port, args.proxy_cache,
+            container_id, args.name, args.load_balancer, args.service, args.port, args.proxy_cache,
             args.use_ssl, args.healthcheck, args.mysql_master_id, args.session_persistence,
             args.load_balancer_algorithm, args.ip_version, args.autoscaling
         )
@@ -663,7 +785,8 @@ class OktawaveCli(object):
 
     def OPN_Get(self, args):
         """Displays an OPN"""
-        c = self.api.OPN_Get(args.id)
+        opn_id = self._name_to_id(args.id)
+        c = self.api.OPN_Get(opn_id)
 
         base_tab = [['Key', 'Value']]
         base_tab.extend([
@@ -684,29 +807,35 @@ class OktawaveCli(object):
         self.p._print('Virtual machines')
         self.p.print_table(vm_tab)
         
-    def OPN_Create(self, args, ):
+    def OPN_Create(self, args):
         """Creates a new OPN"""
         c = self.api.OPN_Create(args.name, args.address_pool)
         print "OK"
 
     def OPN_AddOCI(self, args):
         """Adds an OCI to an OPN"""
-        self.api.OPN_AddOCI(args.id, args.oci_id, args.ip_address)
+        opn_id = self._name_to_id(args.id)
+        oci_id = self._name_to_id(args.oci_id)
+        self.api.OPN_AddOCI(opn_id, oci_id, args.ip_address)
         print "OK"
 
     def OPN_RemoveOCI(self, args):
         """Removes an OCI from an OPN"""
-        self.api.OPN_RemoveOCI(args.id, args.oci_id)
+        opn_id = self._name_to_id(args.id)
+        oci_id = self._name_to_id(args.oci_id)
+        self.api.OPN_RemoveOCI(opn_id, oci_id)
         print "OK"
 
     def OPN_Delete(self, args):
         """Deletes a private network."""
-        self.api.OPN_Delete(args.id)
+        opn_id = self._name_to_id(args.id)
+        self.api.OPN_Delete(opn_id)
         print "OK"
 
     def OPN_Rename(self, args):
         """Changes an OPN's name"""
-        self.api.OPN_Rename(args.id, args.name)
+        opn_id = self._name_to_id(args.id)
+        self.api.OPN_Rename(opn_id, args.name)
         print "OK"
 
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-from oktawave.cli import OktawaveCli
+from oktawave.cli import OktawaveCli, OCIid, ORDBid, ContainerId, OPNid, OVSid
 import logging
 import argparse
 import subprocess
@@ -26,38 +26,38 @@ def add_subparsers(subparsers, data):
                 arg.append({})
             subparser.add_argument(arg[0], help=arg[1], **arg[2])
 
-def simple_subparsers(data, id_desc):
+def simple_subparsers(data, id_desc, id_type=int):
     return [
-        [item[0], item[1], [['id', id_desc, {'type' : int}]]]
+        [item[0], item[1], [['id', id_desc, {'type': id_type}]]]
         for item in data
     ]
 
 def simple_ldb_subparsers(data):
     return [
         [item[0], item[1], [
-            ['id', 'Database VM ID, as returned by "ORDB List"', {'type' : int}],
+            ['id', 'Database VM ID, as returned by "ORDB List"', {'type': ORDBid}],
             ['name', 'Logical database name']
         ]]
         for item in data
     ]
 
 def simple_vm_subparsers(data):
-    return simple_subparsers(data, 'Virtual machine ID, as returned by "OCI List"')
+    return simple_subparsers(data, 'Virtual machine ID, as returned by "OCI List"', id_type=OCIid)
 
 def simple_db_subparsers(data):
-    return simple_subparsers(data, 'Database virtual machine ID, as returned by "ORDB List"')
+    return simple_subparsers(data, 'Database virtual machine ID, as returned by "ORDB List"', id_type=ORDBid)
 
 def simple_container_subparsers(data):
-    return simple_subparsers(data, 'Container ID, as returned by "Container List"')
+    return simple_subparsers(data, 'Container ID, as returned by "Container List"', id_type=ContainerId)
 
 def simple_opn_subparsers(data):
-    return simple_subparsers(data, 'Network ID, as returned by "OPN List"')
+    return simple_subparsers(data, 'Network ID, as returned by "OPN List"', id_type=OPNid)
 
 def external_binary_subparsers(data):
     return [
         [item[0], item[1],
             [
-                ['id', 'Virtual machine ID, as returned by "OCI List"', {'type' : int}],
+                ['id', 'Virtual machine ID, as returned by "OCI List"', {'type': OCIid}],
                 ['exec_args', 'Extra arguments for binary (after --)', {'nargs': '*'}]
             ] + item[2]
         ]
@@ -111,11 +111,11 @@ if(__name__ == '__main__'):
                 ['subregion', 'Subregion: 1 for PL-001, 2 for PL-002 or Auto (the default)', {'nargs' : '?', 'choices' : ['1', '2', 'Auto'], 'default' : 'Auto'}]
                 ]],
             ['ChangeClass', 'Change running VM class', [
-                ['id', 'Existing virtual machine ID, as returned by "OCI List"', {'type' : int}],
+                ['id', 'Existing virtual machine ID, as returned by "OCI List"', {'type': OCIid}],
                 ['oci_class', 'OCI class name, for example "v1.standard-2.2" or "v1.highcpu-4.2".']
                 ]],
             ['Clone', 'Clone a virtual machine', [
-                ['id', 'Existing virtual machine ID, as returned by "OCI List"', {'type' : int}],
+                ['id', 'Existing virtual machine ID, as returned by "OCI List"', {'type': OCIid}],
                 ['name', 'Clone name'],
                 ['clonetype', 'Runtime: new root/administator password will be generated, new host name set etc. (Unmodified tech-support account required on OCI). AbsoluteCopy: initialization process will be skipped\n\tonly new IP address and domain name will be assigned.', {'choices': ['Runtime', 'AbsoluteCopy']}]
                 ]],
@@ -169,7 +169,7 @@ if(__name__ == '__main__'):
     add_subparsers(ovs_parsers, [
         ['List', 'List disks', []],
         ['Delete', 'Delete a disk', [
-            ['id', 'Disk ID, as returned by "OVS List"', {'type' : int}]
+            ['id', 'Disk ID, as returned by "OVS List"', {'type': OVSid}]
             ]],
         ['Create', 'Add a new disk', [
             ['name', 'Disk name'],
@@ -179,19 +179,19 @@ if(__name__ == '__main__'):
             ['subregion', 'Subregion: 1 for PL-001, 2 for PL-002 or Auto (the default)', {'nargs' : '?', 'choices' : ['1', '2', 'Auto'], 'default' : 'Auto'}]
             ]],
         ['Map', 'Map a disk to an instance', [
-            ['disk_id', 'Disk ID, as returned by "OVS List"', {'type' : int}],
-            ['oci_id', 'VM instance ID, as returned by "OCI List"', {'type' : int}]
+            ['disk_id', 'Disk ID, as returned by "OVS List"', {'type': OVSid}],
+            ['oci_id', 'VM instance ID, as returned by "OCI List"', {'type': OCIid}]
             ]],
         ['Unmap', 'Unmap a disk from an instance', [
-            ['disk_id', 'Disk ID, as returned by "OVS List"', {'type' : int}],
-            ['oci_id', 'VM instance ID, as returned by "OCI List"', {'type' : int}]
+            ['disk_id', 'Disk ID, as returned by "OVS List"', {'type': OVSid}],
+            ['oci_id', 'VM instance ID, as returned by "OCI List"', {'type': OCIid}]
         ]],
         ['ChangeTier', 'Change disk\'s tier', [
-            ['disk_id', 'Disk ID, as returned by "OVS List"', {'type' : int}],
+            ['disk_id', 'Disk ID, as returned by "OVS List"', {'type': OVSid}],
             ['tier', 'Disk tier (1, 2, 3, 4 or 5)', {'type' : int, 'choices' : [1, 2, 3, 4, 5]}],
         ]],
         ['Extend', 'Change disk\'s size', [
-            ['disk_id', 'Disk ID, as returned by "OVS List"', {'type' : int}],
+            ['disk_id', 'Disk ID, as returned by "OVS List"', {'type': OVSid}],
             ['size', 'New disk size (GB). It cannot be smaller than the current disk size.', {'type' : int}],
         ]]
     ])
@@ -201,11 +201,11 @@ if(__name__ == '__main__'):
     add_subparsers(ordb_parsers, [
         ['List', 'List database instances', []],
         ['Delete', 'Delete a database instance or logical database', [
-            ['id', 'VM instance ID, as returned by "ORDB List"', {'type' : int}],
+            ['id', 'VM instance ID, as returned by "ORDB List"', {'type': ORDBid}],
             ['db_name', 'Database name (optional; if not specified deletes the virtual machine)', {'nargs' : '?'}]
             ]],
         ['LogicalDatabases', 'Show a list of logical databases', [
-            ['id', 'VM instance ID, as returned by "ORDB List"; optional - if not specified, prints a list of all logical databases', {'nargs' : '?', 'type' : int}]
+            ['id', 'VM instance ID, as returned by "ORDB List"; optional - if not specified, prints a list of all logical databases', {'nargs': '?', 'type': ORDBid}]
             ]],
         ['Templates', 'List available database templates', []],
         ['TemplateInfo', 'Show information about a template', [
@@ -218,22 +218,22 @@ if(__name__ == '__main__'):
             ['subregion', 'Subregion: 1 for PL-001, 2 for PL-002 or Auto (the default)', {'nargs' : '?', 'choices' : ['1', '2', 'Auto'], 'default' : 'Auto'}]
             ]],
         ['Clone', 'Clone a DB virtual machine', [
-            ['id', 'Existing DB virtual machine ID, as returned by "ORDB List"', {'type' : int}],
+            ['id', 'Existing DB virtual machine ID, as returned by "ORDB List"', {'type': ORDBid}],
             ['name', 'Clone name']
             ]],
         ['CreateLogicalDatabase', 'Create a logical database within an instance', [
-            ['id', 'Database VM ID, as returned by "ORDB List"', {'type' : int}],
+            ['id', 'Database VM ID, as returned by "ORDB List"', {'type': ORDBid}],
             ['name', 'Logical database name'],
             ['encoding', 'Database character encoding', {'choices' : ['utf8', 'latin2']}]
             ]],
         ['MoveLogicalDatabase', 'Move a logical database to a different instance', [
-            ['id_from', 'Source database VM ID, as returned by "ORDB List"', {'type' : int}],
-            ['id_to', 'Destination database VM ID, as returned by "ORDB List"', {'type' : int}],
+            ['id_from', 'Source database VM ID, as returned by "ORDB List"', {'type': ORDBid}],
+            ['id_to', 'Destination database VM ID, as returned by "ORDB List"', {'type': ORDBid}],
             ['name', 'Logical database name']
             ]],
         ['Backups', 'Lists logical database backup files', []],
         ['RestoreLogicalDatabase', 'Restore a logical database from backup', [
-            ['id', 'Database virtual machine ID, as returned by "ORDB List"'],
+            ['id', 'Database virtual machine ID, as returned by "ORDB List"', {'type': ORDBid}],
             ['backup_file', 'Backup file name, as returned by "ORDB Backups"'],
             ['name', 'Name of the target logical database']
         ]]
@@ -286,16 +286,16 @@ if(__name__ == '__main__'):
     add_subparsers(container_parsers, [
         ['List', 'List containers', []],
         ['RemoveOCI', 'Remove an OCI from container', [
-            ['id', 'Container ID', {'type' : int}],
-            ['oci_id', 'OCI ID', {'type' : int}]
+            ['id', 'Container ID', {'type': ContainerId}],
+            ['oci_id', 'OCI ID', {'type': OCIid}]
         ]],
         ['AddOCI', 'Add an OCI to container', [
-            ['id', 'Container ID', {'type' : int}],
-            ['oci_id', 'OCI ID', {'type' : int}]
+            ['id', 'Container ID', {'type': ContainerId}],
+            ['oci_id', 'OCI ID', {'type': OCIid}]
         ]],
         ['Create', 'Create a new container', container_params],
         ['Edit', 'Modify an existing container. Takes the same options a "Container Create" and the container\'s ID.', [
-            ['id', 'Container ID', {'type' : int}],
+            ['id', 'Container ID', {'type': ContainerId}],
         ] + container_params],
         ] + simple_container_subparsers([
             ['Get', 'Display a container\'s information'],
@@ -313,16 +313,16 @@ if(__name__ == '__main__'):
                 'default' : '10.0.0.0/24'}]
         ]],
         ['AddOCI', 'Add an OCI to an OPN', [
-            ['id', 'OPN ID', {'type' : int}],
-            ['oci_id', 'OCI ID', {'type' : int}],
+            ['id', 'OPN ID', {'type': OPNid}],
+            ['oci_id', 'OCI ID', {'type': OCIid}],
             ['ip_address', 'The private IP address'],
         ]],
         ['RemoveOCI', 'Remove an OCI from an OPN', [
-            ['id', 'OPN ID', {'type' : int}],
-            ['oci_id', 'OCI ID', {'type' : int}],
+            ['id', 'OPN ID', {'type': OPNid}],
+            ['oci_id', 'OCI ID', {'type': OCIid}],
         ]],
         ['Rename', 'Change an OPN\'s name', [
-            ['id', 'OPN ID', {'type' : int}],
+            ['id', 'OPN ID', {'type': OPNid}],
             ['name', 'New OPN name']
         ]],
         ] + simple_opn_subparsers([
