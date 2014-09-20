@@ -545,6 +545,17 @@ class OktawaveApi(object):
 
         return res
 
+    def OCI_ClassChangeNeedsRestart(self, oci_id, oci_class):
+        """Will OCI class change require reboot?"""
+        self.logon()
+        oci_class_obj = self._oci_class(oci_class)
+        if not oci_class_obj:
+            raise OktawaveOCIClassNotFound()
+        return self.clients.call('IsRestartNeededForClassChange',
+                                 virtualMachineId=oci_id,
+                                 clientId=self.client_id,
+                                 targetClassId=oci_class_obj.id)
+
     def OCI_ChangeClass(self, oci_id, oci_class, at_midnight=False):
         """Changes running VM class, potentially rebooting it"""
         oci = self._simple_vm_method('GetVirtualMachineById', oci_id)

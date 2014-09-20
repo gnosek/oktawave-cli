@@ -223,10 +223,17 @@ def OCI_Create(ctx, name, template, oci_class=None, subregion='Auto', forced_typ
 @OCI.command()
 @oci_id_param('oci_id')
 @oci_class_param('oci_class')
+@click.option('--restart', help='when to restart OCI if needed',
+              type=click.Choice(['never', 'now', 'midnight']),
+              default='never', show_default=True)
 @pass_context
-def OCI_ChangeClass(ctx, oci_id, oci_class):
+def OCI_ChangeClass(ctx, oci_id, oci_class, restart):
     """Change running instance class"""
-    ctx.api.OCI_ChangeClass(oci_id, oci_class)
+    needs_restart = ctx.api.OCI_ClassChangeNeedsRestart(oci_id, oci_class)
+    if needs_restart and restart == 'never':
+        ctx.p.print_str('Restart needed for OCI class change, use --restart=[now|midnight]')
+        return
+    ctx.api.OCI_ChangeClass(oci_id, oci_class, at_midnight=(restart == 'midnight'))
 
 
 @OCI.command(
