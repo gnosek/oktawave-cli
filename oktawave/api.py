@@ -183,7 +183,7 @@ class OktawaveApi(object):
         except AttributeError:
             raise OktawaveLoginError()
         self.client_id = res['User']['Client']['ClientId']
-        self.client_object = res
+        self.client_object = res['User']
         return res
 
     def _simple_vm_method(self, method, vm_id):
