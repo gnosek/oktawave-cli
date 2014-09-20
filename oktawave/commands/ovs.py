@@ -40,10 +40,8 @@ def tier_param(*args, **kwargs):
     return positional_option(*args, **kwargs)
 
 
-def disk_shared_param(*args, **kwargs):
-    kwargs.setdefault('help', 'allow sharing volume between instances')
-    kwargs.setdefault('type', click.Choice(['shared', 'unshared']))
-    return positional_option(*args, **kwargs)
+def disk_shared_param():
+    return click.option('--shared/--not-shared', help='allow sharing volume between instances')
 
 
 @click.group(cls=OktawaveCliGroup, name='OVS')
@@ -93,12 +91,12 @@ def OVS_List(ctx):
 @ovs_name_param('name')
 @capacity_param('capacity')
 @tier_param('tier')
-@disk_shared_param('disktype')
+@disk_shared_param()
 @subregion_param('subregion')
 @pass_context
-def OVS_Create(ctx, name, capacity, tier, disktype, subregion):
+def OVS_Create(ctx, name, capacity, tier, shared, subregion):
     """Add a disk"""
-    ctx.api.OVS_Create(name, capacity, tier, (disktype == 'shared'), subregion)
+    ctx.api.OVS_Create(name, capacity, tier, shared, subregion)
     print "OK"
 
 
