@@ -12,6 +12,8 @@ from oktawave.commands.opn import OPN
 from oktawave.commands.ordb import ORDB
 from oktawave.commands.ovs import OVS
 
+VERSION = '0.9.0'
+
 
 @click.group()
 @click.option('-c', '--config', help='Specify configuration file', type=click.Path(dir_okay=False),
@@ -21,6 +23,7 @@ from oktawave.commands.ovs import OVS
 @click.option('-p', '--password', help='Oktawave password', required=False)
 @click.option('-ocsu', '--ocs-username', help='OCS username', required=False)
 @click.option('-ocsp', '--ocs-password', help='OCS password', required=False)
+@click.version_option(VERSION)
 @pass_context
 def cli(ctx, config=None, username=None, password=None, ocs_username=None, ocs_password=None, debug=False):
     cp = {}
