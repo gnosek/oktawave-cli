@@ -121,6 +121,7 @@ def show_template_info(ctx, template_id):
         ['Ethernet controllers', ti['eth_count']],
         ['Connection', ti['connection_type']],
         ['Disk drives', ', '.join(_hdd_label(hdd) for hdd in ti['disks'])],
-        ['Description', ti['description']],
     ])
     ctx.p.print_table(tab)
+    ctx.p.print_str('Template description:')
+    ctx.p.print_str(ti['description'])
