@@ -7,15 +7,15 @@ class Printer:
     def __init__(self, output=sys.stdout):
         self.output = output
 
-    def _print(self, text):
+    def print_str(self, text):
         print >> self.output, text
 
     def offset_print(self, text, offset=1):
-        self._print(offset * ' ' + text)
+        self.print_str(offset * ' ' + text)
 
     def print_table(self, data, hmarg=1):
         for i in xrange(hmarg):
-            self._print('')
+            self.print_str('')
         x = PrettyTable(data[0])
         if hasattr(x, 'set_field_align'):
             for f in data[0]:
@@ -26,7 +26,7 @@ class Printer:
             x.add_row(row)
         print unicode(x)
         for i in xrange(hmarg):
-            self._print('')
+            self.print_str('')
 
     def print_hash_table(self, data, headers=None, order=False):
         if headers is None:
