@@ -8,9 +8,6 @@ from oktawave.commands.util import show_template_category, show_oci_logs, show_o
 from oktawave.exceptions import OktawaveOCIClassNotFound
 
 
-SUBREGIONS = ('1', '2', 'Auto')
-
-
 class OCIParam(NamedItemParam):
     name = 'OCI name/id'
     label = 'OCI'
@@ -19,6 +16,22 @@ class OCIParam(NamedItemParam):
     def list_items(cls, api):
         for item in api.OCI_List():
             yield item['id'], item['name']
+
+
+class SubregionParam(NamedItemParam):
+    name = 'Subregion name/ID'
+    label = 'Subregion'
+
+    @classmethod
+    def list_items(cls, api):
+        for item in api.OCI_Subregions():
+            yield item['id'], item['name']
+
+    def convert(self, value, param, ctx):
+        if value == 'Auto':
+            return value
+
+        return super(SubregionParam, self).convert(value, param, ctx)
 
 
 def template_id_param(*args, **kwargs):
@@ -39,8 +52,8 @@ def oci_class_param(*args, **kwargs):
 
 
 def subregion_param(*args, **kwargs):
-    kwargs.setdefault('help', 'subregion ID')
-    kwargs.setdefault('type', click.Choice(SUBREGIONS))
+    kwargs.setdefault('help', 'subregion ID (as returned by OCI Subregions) or Auto')
+    kwargs.setdefault('type', SubregionParam())
     kwargs.setdefault('default', 'Auto')
     return positional_option(*args, **kwargs)
 
@@ -177,6 +190,18 @@ def OCI_Logs(ctx, oci_id):
 def OCI_Settings(ctx, oci_id):
     """Show basic VM settings (IP addresses, OS, names, autoscaling etc.)"""
     show_oci_settings(ctx, oci_id)
+
+
+@OCI.command()
+@pass_context
+def OCI_Subregions(ctx):
+    """List subregions"""
+
+    def fmt(cluster):
+        return [cluster['id'], cluster['name'], cluster['active']]
+
+    clusters = ctx.api.OCI_Subregions()
+    ctx.print_table(['ID', 'Name', 'Active'], clusters, fmt)
 
 
 @OCI.command()

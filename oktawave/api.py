@@ -162,9 +162,7 @@ def _ovs_disk_mod(disk):
 def _subregion_id(subregion):
     if str(subregion) == 'Auto':
         return None
-    if str(subregion) == '1':
-        return 1
-    return 4
+    return int(subregion)
 
 
 def _container_service_id(service):
@@ -558,6 +556,16 @@ class OktawaveApi(object):
         oci.setdefault('PrivateIpv4', '')
         self.clients.call(
             'UpdateVirtualMachine', machine=oci, clientId=self.client_id, classChangeInScheduler=at_midnight)
+
+    def OCI_Subregions(self):
+        self.logon(only_common=True)
+        resp = self.common.call('GetClusters', onlyClientClusters=False, clientId=self.client_id)
+        for cluster in resp:
+            yield {
+                'id': cluster['ClusterId'],
+                'name': cluster['DisplayName'],
+                'active': cluster['IsActive']
+            }
 
     def OCI_Create(self, name, template, oci_class=None, forced_type=TemplateType.Machine, db_type=None,
                    subregion='Auto'):
