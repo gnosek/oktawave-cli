@@ -131,6 +131,72 @@ class TemplateDescription(DictionaryItem):
     NAME_FIELD = 'Description'
 
 
+def _get_machine_ip():
+    return '127.0.0.1'
+
+
+def _ovs_disk_mod(disk):
+    vms = [
+        vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds']]
+
+    lock_vms = [
+        vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds'] if
+        vm['VirtualMachine']['StatusDictId'] == PowerStatus.PowerOn or
+        not vm['IsPrimary']
+    ]
+
+    disk_mod = {
+        'CapacityGB': disk['CapacityGB'],
+        'ClientHddId': disk['ClientHddId'],
+        'ClusterId': disk['Cluster']['ClusterId'],
+        'HddName': disk['HddName'],
+        'IsShared': disk['IsShared'],
+        'HddStandardId': disk['HddStandard']['DictionaryItemId'],
+        'PaymentTypeId': disk['PaymentType']['DictionaryItemId'],
+        'VirtualMachineIds': vms,
+        'LockVirtualMachineIds': lock_vms,
+    }
+    return disk_mod
+
+
+def _subregion_id(subregion):
+    if str(subregion) == 'Auto':
+        return None
+    if str(subregion) == '1':
+        return 1
+    return 4
+
+
+def _container_service_id(service):
+    services = {'HTTP': 43, 'HTTPS': 44, 'SMTP': 45, 'MySQL': 287, 'Port': 155}
+    return services[service]
+
+
+def _load_balancer_algorithm_id(algorithm):
+    algorithms = {'least_response_time': 282, 'least_connections': 281, 'source_ip_hash': 288, 'round_robin': 612}
+    return algorithms[algorithm]
+
+
+def _session_type_id(s_type):
+    s_types = {'none': 47, 'by_source_ip': 46, 'by_cookie': 280}
+    return s_types[s_type]
+
+
+def _ip_version_id(version):
+    versions = {'4': 115, '6': 116, 'both': 565}
+    return versions[version]
+
+
+def _autoscaling_id(autoscaling):
+    types = {'on': 185, 'off': 184}
+    return types[autoscaling]
+
+
+def _address_pool_id(name):
+    pools = {'10.0.0.0/24': 278, '192.168.0.0/24': 279}
+    return pools[name]
+
+
 class OktawaveApi(object):
     def __init__(self, username, password, debug=False):
         """Initialize the API instance
@@ -188,7 +254,7 @@ class OktawaveApi(object):
                 'LogonUser',
                 user=self.username,
                 password=self.password,
-                ipAddress=self._get_machine_ip(),
+                ipAddress=_get_machine_ip(),
                 userAgent="Oktawave CLI")
         except AttributeError:
             raise OktawaveLoginError()
@@ -215,9 +281,6 @@ class OktawaveApi(object):
             res['VirtualMachineHdds'] = []
         return res
 
-    def _get_machine_ip(self):
-        return '127.0.0.1'
-
     def _dict_item(self, dict_id, key):
         items = self.common.call(
             'GetDictionaryItems', dictionary=dict_id, clientId=self.client_id)
@@ -237,29 +300,6 @@ class OktawaveApi(object):
         if not tier_obj:
             raise OktawaveOVSTierNotFound()
         return tier_obj
-
-    def _ovs_disk_mod(self, disk):
-        vms = [
-            vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds']]
-
-        lock_vms = [
-            vm['VirtualMachine']['VirtualMachineId'] for vm in disk['VirtualMachineHdds'] if
-            vm['VirtualMachine']['StatusDictId'] == PowerStatus.PowerOn or
-            not vm['IsPrimary']
-        ]
-
-        disk_mod = {
-            'CapacityGB': disk['CapacityGB'],
-            'ClientHddId': disk['ClientHddId'],
-            'ClusterId': disk['Cluster']['ClusterId'],
-            'HddName': disk['HddName'],
-            'IsShared': disk['IsShared'],
-            'HddStandardId': disk['HddStandard']['DictionaryItemId'],
-            'PaymentTypeId': disk['PaymentType']['DictionaryItemId'],
-            'VirtualMachineIds': vms,
-            'LockVirtualMachineIds': lock_vms,
-        }
-        return disk_mod
 
     def _container_simple(self, container_id):
         """Fetches a container's information using GetContainersSimpleWithVM"""
@@ -519,13 +559,6 @@ class OktawaveApi(object):
         self.clients.call(
             'UpdateVirtualMachine', machine=oci, clientId=self.client_id, classChangeInScheduler=at_midnight)
 
-    def _subregion_id(self, subregion):
-        if str(subregion) == 'Auto':
-            return None
-        if str(subregion) == '1':
-            return 1
-        return 4
-
     def OCI_Create(self, name, template, oci_class=None, forced_type=TemplateType.Machine, db_type=None,
                    subregion='Auto'):
         """Creates a new instance from template"""
@@ -551,7 +584,7 @@ class OktawaveApi(object):
                           databaseTypeId=db_type,
                           clientVmParameter=None,
                           autoScalingTypeId=DICT['OCI_AUTOSCALING_ID'],
-                          clusterId=self._subregion_id(subregion))
+                          clusterId=_subregion_id(subregion))
 
     def OCI_Clone(self, oci_id, name, clonetype):
         """Clones a VM"""
@@ -608,7 +641,7 @@ class OktawaveApi(object):
             'IsShared': shared,
             'PaymentTypeId': DICT['OVS_PAYMENT_ID'],
             'VirtualMachineIds': [],
-            'ClusterId': self._subregion_id(subregion)
+            'ClusterId': _subregion_id(subregion)
         }
         self.clients.call('CreateDisk', clientHdd=disk, clientId=self.client_id)
 
@@ -619,7 +652,7 @@ class OktawaveApi(object):
         if disk is None:
             raise OktawaveOVSNotFoundError()
 
-        disk_mod = self._ovs_disk_mod(disk)
+        disk_mod = _ovs_disk_mod(disk)
         if oci_id in disk_mod['VirtualMachineIds']:
             raise OktawaveOVSMappedError()
         disk_mod['VirtualMachineIds'].append(oci_id)
@@ -635,7 +668,7 @@ class OktawaveApi(object):
         if disk is None:
             raise OktawaveOVSNotFoundError()
 
-        disk_mod = self._ovs_disk_mod(disk)
+        disk_mod = _ovs_disk_mod(disk)
         if oci_id not in disk_mod['VirtualMachineIds']:
             raise OktawaveOVSUnmappedError()
 
@@ -651,7 +684,7 @@ class OktawaveApi(object):
         if disk is None:
             raise OktawaveOVSNotFoundError()
 
-        disk_mod = self._ovs_disk_mod(disk)
+        disk_mod = _ovs_disk_mod(disk)
         disk_mod['HddStandardId'] = self._ovs_tier(tier).id
 
         self.clients.call('UpdateDisk', clientHdd=disk_mod, clientId=self.client_id)
@@ -662,7 +695,7 @@ class OktawaveApi(object):
         if disk is None:
             raise OktawaveOVSNotFoundError()
 
-        disk_mod = self._ovs_disk_mod(disk)
+        disk_mod = _ovs_disk_mod(disk)
         if disk_mod.pop('LockVirtualMachineIds'):
             raise OktawaveOVSMappedError()
 
@@ -907,26 +940,6 @@ class OktawaveApi(object):
         self.clients.call('DeleteContainers', containerIds=[container_id],
                           clientId=self.client_id)
 
-    def _container_service_id(self, service):
-        services = {'HTTP': 43, 'HTTPS': 44, 'SMTP': 45, 'MySQL': 287, 'Port': 155}
-        return services[service]
-
-    def _load_balancer_algorithm_id(self, algorithm):
-        algorithms = {'least_response_time': 282, 'least_connections': 281, 'source_ip_hash': 288, 'round_robin': 612}
-        return algorithms[algorithm]
-
-    def _session_type_id(self, s_type):
-        s_types = {'none': 47, 'by_source_ip': 46, 'by_cookie': 280}
-        return s_types[s_type]
-
-    def _ip_version_id(self, version):
-        versions = {'4': 115, '6': 116, 'both': 565}
-        return versions[version]
-
-    def _autoscaling_id(self, autoscaling):
-        types = {'on': 185, 'off': 184}
-        return types[autoscaling]
-
     def Container_Create(
             self, name, load_balancer, service, port, proxy_cache, ssl,
             healthcheck, master_id, session, lb_algorithm, ip_version, autoscaling):
@@ -938,15 +951,15 @@ class OktawaveApi(object):
             'OwnerClientId': self.client_id,
             'ContainerName': name,
             'IsLoadBalancer': load_balancer,
-            'Service': {'DictionaryItemId': self._container_service_id(service)},
-            'LoadBalancerAlgorithm': {'DictionaryItemId': self._load_balancer_algorithm_id(lb_algorithm)},
+            'Service': {'DictionaryItemId': _container_service_id(service)},
+            'LoadBalancerAlgorithm': {'DictionaryItemId': _load_balancer_algorithm_id(lb_algorithm)},
             'IsSSLUsed': ssl,
             'IsProxyCache': proxy_cache,
             'MasterServiceId': master_id,
             'PortNumber': port,
-            'SessionType': {'DictionaryItemId': self._session_type_id(session)},
-            'IPVersion': {'DictionaryItemId': self._ip_version_id(ip_version)},
-            'AutoScalingType': {'DictionaryItemId': self._autoscaling_id(autoscaling)},
+            'SessionType': {'DictionaryItemId': _session_type_id(session)},
+            'IPVersion': {'DictionaryItemId': _ip_version_id(ip_version)},
+            'AutoScalingType': {'DictionaryItemId': _autoscaling_id(autoscaling)},
             'IsServiceCheckAvailable': healthcheck
         }, virtualMachinesId=vm_ids)
         return result
@@ -963,24 +976,20 @@ class OktawaveApi(object):
         c_simple = self._container_simple(container_id)
         c['ContainerName'] = name
         c['IsLoadBalancer'] = load_balancer
-        c['Service'] = {'DictionaryItemId': self._container_service_id(service)}
-        c['LoadBalancerAlgorithm'] = {'DictionaryItemId': self._load_balancer_algorithm_id(lb_algorithm)}
+        c['Service'] = {'DictionaryItemId': _container_service_id(service)}
+        c['LoadBalancerAlgorithm'] = {'DictionaryItemId': _load_balancer_algorithm_id(lb_algorithm)}
         c['IsSSLUsed'] = ssl
         c['IsProxyCache'] = proxy_cache
         c['MasterServiceId'] = master_id
         c['PortNumber'] = port
-        c['SessionType'] = {'DictionaryItemId': self._session_type_id(session)}
-        c['IPVersion'] = {'DictionaryItemId': self._ip_version_id(ip_version)}
-        c['AutoScalingType'] = {'DictionaryItemId': self._autoscaling_id(autoscaling)}
-        c['AutoScalingTypeDictId'] = self._autoscaling_id(autoscaling)
+        c['SessionType'] = {'DictionaryItemId': _session_type_id(session)}
+        c['IPVersion'] = {'DictionaryItemId': _ip_version_id(ip_version)}
+        c['AutoScalingType'] = {'DictionaryItemId': _autoscaling_id(autoscaling)}
+        c['AutoScalingTypeDictId'] = _autoscaling_id(autoscaling)
         c['IsServiceCheckAvailable'] = healthcheck
         self._d(c)
         self.clients.call('UpdateContainer', container=c,
                           virtualMachinesId=[vm['VirtualMachineId'] for vm in c_simple['VirtualMachines']])
-
-    def _address_pool_id(self, name):
-        pools = {'10.0.0.0/24': 278, '192.168.0.0/24': 279}
-        return pools[name]
 
     def OPN_List(self):
         """Lists client's OPNs"""
@@ -1011,7 +1020,7 @@ class OktawaveApi(object):
         self._d(self.client_object)
         return self.clients.call('CreateVlan', vlan={
             'VlanName': name,
-            'AddressPool': {'DictionaryItemId': self._address_pool_id(address_pool)},
+            'AddressPool': {'DictionaryItemId': _address_pool_id(address_pool)},
             'OwnerClient': self.client_object['Client'],
             'PaymentType': {'DictionaryItemId': DICT['OPN_PAYMENT_ID']},
             'CreationUserId': self.client_id
