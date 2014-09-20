@@ -125,6 +125,12 @@ class SoftwareItem(DictionaryItem):
         self.tree_path = '/'.join(self._dict_names(data[self.NAME_LIST_FIELD], self.NAME_FIELD))
 
 
+class TemplateDescription(DictionaryItem):
+    ITEM_ID_FIELD = 'TemplateDescriptionId'
+    NAME_LIST_FIELD = 'TemplateDescriptionsNames'
+    NAME_FIELD = 'Description'
+
+
 class OktawaveApi(object):
     def __init__(self, username, password, debug=False):
         """Initialize the API instance
@@ -361,7 +367,7 @@ class OktawaveApi(object):
                 'capacity_gb': hdd['CapacityGB'],
                 'is_primary': hdd['IsPrimary']
             } for hdd in data['DiskDrives']],
-            'description': data['Description']
+            'description': TemplateDescription(data['TemplateDescription'])
         }
 
     def OCI_List(self):
