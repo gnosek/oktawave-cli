@@ -1042,7 +1042,6 @@ class OktawaveApi(object):
     def OPN_RemoveOCI(self, opn_id, oci_id):
         self.logon()
         oci = self.clients.call('GetVirtualMachineById', virtualMachineId=oci_id, clientId=self.client_id)
-        vlan = self.clients.call('GetVlanById', vlanId=opn_id, clientId=self.client_id)
         l1 = len(oci['PrivateIpv4'])
         oci['PrivateIpv4'] = filter(lambda x: x['Vlan']['VlanId'] != opn_id, oci['PrivateIpv4'])
         if l1 == len(oci['PrivateIpv4']):
