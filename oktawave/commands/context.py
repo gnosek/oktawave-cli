@@ -22,7 +22,7 @@ class OktawaveCliContext(object):
             username=api_username, password=api_password,
             debug=debug)
         try:
-            self.api._logon(only_common=False)
+            self.api.logon(only_common=False)
         except OktawaveLoginError:
             print "ERROR: Couldn't login to Oktawave."
             sys.exit(1)

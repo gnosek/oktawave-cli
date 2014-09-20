@@ -143,6 +143,10 @@ class OktawaveApi(object):
         self.username = username
         self.password = password
         self.debug = debug
+        self.client_id = None
+        self.client_object = None
+        self.common = None
+        self.clients = None
 
     # HELPER METHODS ###
     # methods starting with "_" will not be autodispatched to client commands
@@ -154,7 +158,7 @@ class OktawaveApi(object):
 
     def _init_common(self):
         """Convenience method to initialize CommonService client"""
-        if hasattr(self, 'common'):
+        if self.common is not None:
             return
         self.common = ApiClient(
             jsonapi_common, self.username, self.password, self.debug)
@@ -162,13 +166,13 @@ class OktawaveApi(object):
 
     def _init_clients(self):
         """Convenience method to initialize ClientsService client"""
-        if hasattr(self, 'clients'):
+        if self.clients is not None:
             return
         self.clients = ApiClient(
             jsonapi_clients, self.username, self.password, self.debug)
         self._d(self.clients)
 
-    def _logon(self, only_common=False):
+    def logon(self, only_common=False):
         """Initializes CommonService client and calls LogonUser method.
 
         Returns the User object, as returned by LogonUser.
@@ -177,7 +181,7 @@ class OktawaveApi(object):
         self._init_common()
         if not only_common:
             self._init_clients()
-        if hasattr(self, 'client_object'):
+        if self.client_object is not None:
             return self.client_object
         try:
             res = self.common.call(
@@ -194,7 +198,7 @@ class OktawaveApi(object):
 
     def _simple_vm_method(self, method, vm_id):
         """Wraps around common simple virtual machine method call pattern"""
-        self._logon()
+        self.logon()
         return self.clients.call(method, virtualMachineId=vm_id, clientId=self.client_id)
 
     def _find_disk(self, disk_id):
@@ -259,7 +263,7 @@ class OktawaveApi(object):
 
     def _container_simple(self, container_id):
         """Fetches a container's information using GetContainersSimpleWithVM"""
-        self._logon()
+        self.logon()
         cs = self.clients.call('GetContainersSimpleWithVM', clientId=self.client_id)
         for c in cs:
             self._d([c, container_id])
@@ -280,7 +284,7 @@ class OktawaveApi(object):
         Typically args will be the object returned from argparse.
 
         """
-        self._logon(only_common=True)
+        self.logon(only_common=True)
         client = self.client_object
         # TODO: probably get more settings
         return {
@@ -293,7 +297,7 @@ class OktawaveApi(object):
         }
 
     def Account_RunningJobs(self):
-        self._logon()
+        self.logon()
         res = self.common.call('GetRunningOperations', clientId=self.client_id)
         if not res:
             return
@@ -311,7 +315,7 @@ class OktawaveApi(object):
 
     def Account_Users(self):
         """Print users in client account."""
-        self._logon()
+        self.logon()
         users = self.clients.call('GetClientUsers', clientId=self.client_id)
         self._d(users)
         for user in users:
@@ -324,7 +328,7 @@ class OktawaveApi(object):
 
     def OCI_TemplateCategories(self):
         """Lists available template categories"""
-        self._logon()
+        self.logon()
         data = self.common.call('GetTemplateCategories', clientId=self.client_id)
         self._d(data)
 
@@ -336,7 +340,7 @@ class OktawaveApi(object):
 
     def OCI_Templates(self, category_id, name_filter=''):
         """Lists templates in a category"""
-        self._logon()
+        self.logon()
         data = self.common.call(
             'GetTemplatesByCategory', categoryId=category_id, categorySystemId=None, type=None, clientId=self.client_id)
         if data:
@@ -345,7 +349,7 @@ class OktawaveApi(object):
 
     def OCI_TemplateInfo(self, template_id):
         """Shows more detailed info about a particular template"""
-        self._logon()
+        self.logon()
         data = self.clients.call('GetTemplate', templateId=template_id, clientId=self.client_id)
 
         template_category = TemplateCategory(data['TemplateCategory'], None)
@@ -372,7 +376,7 @@ class OktawaveApi(object):
 
     def OCI_List(self):
         """Lists client's virtual machines' basic info"""
-        self._logon()
+        self.logon()
         vms = self.clients.call('GetVirtualMachinesSimple', clientId=self.client_id)
         self._d(vms)
         for vm in vms:
@@ -384,7 +388,7 @@ class OktawaveApi(object):
 
     def OCI_ListDetails(self):
         """Lists client's virtual machines"""
-        self._logon()
+        self.logon()
         sp = {'ClientId': self.client_id}
         vms = self.clients.call('GetVirtualMachines', searchParams=sp)
         self._d(vms)
@@ -426,7 +430,7 @@ class OktawaveApi(object):
 
     def OCI_Logs(self, oci_id):
         """Shows virtual machine logs"""
-        self._logon()
+        self.logon()
         sp = {
             'VirtualMachineId': oci_id,
             'PageSize': 100,
@@ -525,7 +529,7 @@ class OktawaveApi(object):
     def OCI_Create(self, name, template, oci_class=None, forced_type=TemplateType.Machine, db_type=None,
                    subregion='Auto'):
         """Creates a new instance from template"""
-        self._logon()
+        self.logon()
         oci_class_id = None
         if oci_class is not None:
             oci_class_obj = self._oci_class(oci_class)
@@ -551,7 +555,7 @@ class OktawaveApi(object):
 
     def OCI_Clone(self, oci_id, name, clonetype):
         """Clones a VM"""
-        self._logon()
+        self.logon()
         self.clients.call('CloneVirtualMachine',
                           virtualMachineId=oci_id,
                           cloneName=name,
@@ -562,7 +566,7 @@ class OktawaveApi(object):
 
     def OVS_List(self):
         """Lists disks"""
-        self._logon()
+        self.logon()
         dsp = {
             'ClientId': self.client_id,
         }
@@ -589,14 +593,14 @@ class OktawaveApi(object):
 
     def OVS_Delete(self, ovs_id):
         """Deletes a disk"""
-        self._logon()
+        self.logon()
         res = self.clients.call('DeleteDisk', clientHddId=ovs_id, clientId=self.client_id)
         if not res:
             raise OktawaveOVSDeleteError()
 
     def OVS_Create(self, name, capacity_gb, tier, shared, subregion='Auto'):
         """Adds a disk"""
-        self._logon()
+        self.logon()
         disk = {
             'CapacityGB': capacity_gb,
             'HddName': name,
@@ -610,7 +614,7 @@ class OktawaveApi(object):
 
     def OVS_Map(self, ovs_id, oci_id):
         """Maps a disk into an instance"""
-        self._logon()
+        self.logon()
         disk = self._find_disk(ovs_id)
         if disk is None:
             raise OktawaveOVSNotFoundError()
@@ -626,7 +630,7 @@ class OktawaveApi(object):
 
     def OVS_Unmap(self, ovs_id, oci_id):
         """Unmaps a disk from an instance"""
-        self._logon()
+        self.logon()
         disk = self._find_disk(ovs_id)
         if disk is None:
             raise OktawaveOVSNotFoundError()
@@ -642,7 +646,7 @@ class OktawaveApi(object):
             raise OktawaveOVSUnmapError()
 
     def OVS_ChangeTier(self, ovs_id, tier):
-        self._logon()
+        self.logon()
         disk = self._find_disk(ovs_id)
         if disk is None:
             raise OktawaveOVSNotFoundError()
@@ -653,7 +657,7 @@ class OktawaveApi(object):
         self.clients.call('UpdateDisk', clientHdd=disk_mod, clientId=self.client_id)
 
     def OVS_Extend(self, ovs_id, capacity_gb):
-        self._logon()
+        self.logon()
         disk = self._find_disk(ovs_id)
         if disk is None:
             raise OktawaveOVSNotFoundError()
@@ -673,7 +677,7 @@ class OktawaveApi(object):
 
     def ORDB_List(self):
         """Lists databases"""
-        self._logon()
+        self.logon()
         sp = {
             'ClientId': self.client_id,
         }
@@ -694,7 +698,7 @@ class OktawaveApi(object):
 
     def ORDB_Delete(self, oci_id, db_name=None):
         """Deletes a database or VM"""
-        self._logon()
+        self.logon()
         if db_name is None:
             self._simple_vm_method('DeleteVirtualMachine', oci_id)
         else:
@@ -706,7 +710,7 @@ class OktawaveApi(object):
 
     def ORDB_LogicalDatabases(self, oci_id):
         """Shows logical databases"""
-        self._logon()
+        self.logon()
         sp = {
             'ClientId': self.client_id,
         }
@@ -731,7 +735,7 @@ class OktawaveApi(object):
 
     def ORDB_Create(self, name, template, oci_class=None, subregion='Auto'):
         """Creates a database VM"""
-        self._logon()
+        self.logon()
         data = self.clients.call('GetTemplate', templateId=template, clientId=self.client_id)
         if str(data['TemplateType']['DictionaryItemId']) != str(DICT['DB_VM_CATEGORY']):
             raise OktawaveORDBInvalidTemplateError()
@@ -743,7 +747,7 @@ class OktawaveApi(object):
 
     def ORDB_GlobalSettings(self, oci_id):
         """Shows global database engine settings"""
-        self._logon()
+        self.logon()
         data = self.clients.call('GetDatabaseConfig', virtualMachineId=oci_id, clientId=self.client_id)
 
         for item in data:
@@ -754,7 +758,7 @@ class OktawaveApi(object):
 
     def ORDB_CreateLogicalDatabase(self, oci_id, name, encoding):
         """Creates a new logical database within an instance"""
-        self._logon()
+        self.logon()
         self.clients.call(
             'CreateDatabase',
             virtualMachineId=oci_id,
@@ -764,13 +768,13 @@ class OktawaveApi(object):
 
     def ORDB_BackupLogicalDatabase(self, oci_id, name):
         """Creates a backup of logical database"""
-        self._logon()
+        self.logon()
         self.clients.call('BackupDatabase', virtualMachineId=oci_id,
                           databaseName=name, clientId=self.client_id)
 
     def ORDB_MoveLogicalDatabase(self, oci_id_from, oci_id_to, name):
         """Moves a logical database"""
-        self._logon()
+        self.logon()
         self.clients.call(
             'MoveDatabase',
             virtualMachineIdFrom=oci_id_from,
@@ -780,7 +784,7 @@ class OktawaveApi(object):
 
     def ORDB_Backups(self):
         """Lists logical database backups"""
-        self._logon()
+        self.logon()
         mysql_data = self.clients.call(
             'GetBackups', databaseTypeDictId=DICT['MYSQL_DB'], clientId=self.client_id) or []
         pgsql_data = self.clients.call(
@@ -804,14 +808,14 @@ class OktawaveApi(object):
 
     def ORDB_RestoreLogicalDatabase(self, oci_id, name, backup_file):
         """Restores a database from backup"""
-        self._logon()
+        self.logon()
         self.clients.call('RestoreDatabase', virtualMachineId=oci_id,
                           databaseName=name, backupFileName=backup_file,
                           clientId=self.client_id)
 
     def Container_List(self):
         """Lists client's containers' basic info"""
-        self._logon()
+        self.logon()
         containers = self.clients.call('GetContainers', clientId=self.client_id)
         for c in containers:
             yield {
@@ -822,7 +826,7 @@ class OktawaveApi(object):
 
     def Container_Get(self, container_id):
         """Displays a container's information"""
-        self._logon()
+        self.logon()
         c = self.clients.call('GetContainer', containerId=container_id)
         res = {
             'autoscaling': DictionaryItem(c['AutoScalingType']),
@@ -866,7 +870,7 @@ class OktawaveApi(object):
 
     def Container_RemoveOCI(self, container_id, oci_id):
         """Removes an instance from container"""
-        self._logon()
+        self.logon()
         c_simple = self._container_simple(container_id)
         found = False
         for vm in c_simple['VirtualMachines']:
@@ -884,7 +888,7 @@ class OktawaveApi(object):
 
     def Container_AddOCI(self, container_id, oci_id):
         """Adds an instance to container"""
-        self._logon()
+        self.logon()
         c_simple = self._container_simple(container_id)
         found = False
         for vm in c_simple['VirtualMachines']:
@@ -899,7 +903,7 @@ class OktawaveApi(object):
         self.clients.call('UpdateContainer', container=c, virtualMachinesId=vm_ids)
 
     def Container_Delete(self, container_id):
-        self._logon()
+        self.logon()
         self.clients.call('DeleteContainers', containerIds=[container_id],
                           clientId=self.client_id)
 
@@ -928,7 +932,7 @@ class OktawaveApi(object):
             healthcheck, master_id, session, lb_algorithm, ip_version, autoscaling):
         if lb_algorithm == 'least_response_time' and service != 'HTTP' and service != 'HTTPS':
             raise OktawaveLRTNotAllowed()
-        self._logon()
+        self.logon()
         vm_ids = [] if master_id is None else [master_id]
         result = self.clients.call('CreateContainer', container={
             'OwnerClientId': self.client_id,
@@ -952,7 +956,7 @@ class OktawaveApi(object):
     def Container_Edit(
             self, container_id, name, load_balancer, service, port, proxy_cache, ssl,
             healthcheck, master_id, session, lb_algorithm, ip_version, autoscaling):
-        self._logon()
+        self.logon()
         if lb_algorithm == 'least_response_time' and service != 'HTTP' and service != 'HTTPS':
             raise OktawaveLRTNotAllowed()
         c = self.clients.call('GetContainer', containerId=container_id)
@@ -980,7 +984,7 @@ class OktawaveApi(object):
 
     def OPN_List(self):
         """Lists client's OPNs"""
-        self._logon()
+        self.logon()
         vlans = self.clients.call('GetVlansByClientId', clientId=self.client_id)
         for v in vlans:
             yield {
@@ -991,7 +995,7 @@ class OktawaveApi(object):
             }
 
     def OPN_Get(self, opn_id):
-        self._logon()
+        self.logon()
         v = self.clients.call('GetVlanById', vlanId=opn_id, clientId=self.client_id)
         vms = self.clients.call('GetVirtualMachineVlansByVlanId', vlanId=opn_id, clientId=self.client_id)
         return {
@@ -1003,7 +1007,7 @@ class OktawaveApi(object):
         }
 
     def OPN_Create(self, name, address_pool):
-        self._logon()
+        self.logon()
         self._d(self.client_object)
         return self.clients.call('CreateVlan', vlan={
             'VlanName': name,
@@ -1014,11 +1018,11 @@ class OktawaveApi(object):
         })
 
     def OPN_Delete(self, opn_id):
-        self._logon()
+        self.logon()
         return self.clients.call('DeleteVlan', vlanId=opn_id, clientId=self.client_id)
 
     def OPN_AddOCI(self, opn_id, oci_id, ip_address):
-        self._logon()
+        self.logon()
         oci = self.clients.call('GetVirtualMachineById', virtualMachineId=oci_id, clientId=self.client_id)
         vlan = self.clients.call('GetVlanById', vlanId=opn_id, clientId=self.client_id)
         for opn in oci['PrivateIpv4']:
@@ -1036,7 +1040,7 @@ class OktawaveApi(object):
                                  classChangeInScheduler=False)
 
     def OPN_RemoveOCI(self, opn_id, oci_id):
-        self._logon()
+        self.logon()
         oci = self.clients.call('GetVirtualMachineById', virtualMachineId=oci_id, clientId=self.client_id)
         vlan = self.clients.call('GetVlanById', vlanId=opn_id, clientId=self.client_id)
         l1 = len(oci['PrivateIpv4'])
@@ -1047,7 +1051,7 @@ class OktawaveApi(object):
                                  classChangeInScheduler=False)
 
     def OPN_Rename(self, opn_id, name):
-        self._logon()
+        self.logon()
         vlan = self.clients.call('GetVlanById', vlanId=opn_id, clientId=self.client_id)
         vlan['VlanName'] = name
         return self.clients.call('UpdateVlan', vlan=vlan)
