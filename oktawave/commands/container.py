@@ -41,9 +41,7 @@ def container_options(f):
         click.option('--ip-version', help='IP version',
                      type=click.Choice(['4', '6', 'both']),
                      default='4', show_default=True),
-        click.option('--autoscaling', help='autoscaling',
-                     type=click.Choice(['on', 'off']),
-                     default='off', show_default=True)
+        click.option('--autoscaling/--no-autoscaling', help='autoscaling'),
     ]
     for option in options:
         f = option(f)
@@ -156,6 +154,10 @@ def Container_Create(ctx, name, load_balancer, service, port, proxy_cache, use_s
                      healthcheck, mysql_master_id, session_persistence,
                      load_balancer_algorithm, ip_version, autoscaling):
     """Create a new container"""
+    if autoscaling:
+        autoscaling = 'on'
+    else:
+        autoscaling = 'off'
     container_id = ctx.api.Container_Create(
         name, load_balancer, service, port, proxy_cache,
         use_ssl, healthcheck, mysql_master_id, session_persistence,
@@ -173,6 +175,10 @@ def Container_Edit(ctx, container_id, name, load_balancer, service, port, proxy_
                    healthcheck, mysql_master_id, session_persistence,
                    load_balancer_algorithm, ip_version, autoscaling):
     """Modify a container"""
+    if autoscaling:
+        autoscaling = 'on'
+    else:
+        autoscaling = 'off'
     ctx.api.Container_Edit(
         container_id, name, load_balancer, service, port, proxy_cache,
         use_ssl, healthcheck, mysql_master_id, session_persistence,
