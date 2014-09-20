@@ -545,6 +545,17 @@ class OktawaveApi(object):
 
         return res
 
+    def OCI_Classes(self):
+        self.logon(only_common=True)
+        resp = self.common.call('GetVirtualMachineClassConfigurations')
+        for oci_class in resp:
+            yield {
+                'name': DictionaryItem(oci_class['VirtualMachineClass']),
+                'category': DictionaryItem(oci_class['Category']),
+                'cpu_count': oci_class['CpuCount'],
+                'memory_mb': oci_class['RamMB'],
+            }
+
     def OCI_ClassChangeNeedsRestart(self, oci_id, oci_class):
         """Will OCI class change require reboot?"""
         self.logon()

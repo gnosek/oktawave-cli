@@ -47,7 +47,7 @@ def oci_id_param(*args, **kwargs):
 
 
 def oci_class_param(*args, **kwargs):
-    kwargs.setdefault('help', 'OCI class, e.g. v1.standard-1.09')
+    kwargs.setdefault('help', 'OCI class (as returned by OCI Classes), e.g. v1.standard-1.09')
     return positional_option(*args, **kwargs)
 
 
@@ -218,6 +218,21 @@ def OCI_Create(ctx, name, template, oci_class=None, subregion='Auto', forced_typ
         ctx.api.OCI_Create(name, template, oci_class, forced_type, db_type, subregion)
     except OktawaveOCIClassNotFound:
         print "OCI class not found"
+
+
+@OCI.command()
+@pass_context
+def OCI_Classes(ctx):
+    """List OCI classes"""
+
+    def fmt(oci_class):
+        return [oci_class['category'], oci_class['name'], oci_class['cpu_count'], oci_class['memory_mb']]
+
+    def sort_key(oci_class):
+        return str(oci_class['category']), oci_class['cpu_count'], oci_class['memory_mb']
+
+    classes = ctx.api.OCI_Classes()
+    ctx.print_table(['Category', 'Name', 'CPU count', 'Memory (MB)'], sorted(classes, key=sort_key), fmt)
 
 
 @OCI.command()
