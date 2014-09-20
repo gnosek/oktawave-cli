@@ -158,7 +158,7 @@ def ORDB_Settings(ctx, ordb_id):
 @positional_option('name', help='new ORDB instance name')
 @template_id_param('template', help='template ID (as returned by ORDB Templates)')
 @oci_class_param('oci_class', required=False)
-@subregion_param('subregion')
+@subregion_param('--subregion')
 @pass_context
 def ORDB_Create(ctx, name, template, oci_class, subregion):
     """Create a database VM"""

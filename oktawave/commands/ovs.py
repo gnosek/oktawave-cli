@@ -92,7 +92,7 @@ def OVS_List(ctx):
 @capacity_param('capacity')
 @tier_param('tier')
 @disk_shared_param()
-@subregion_param('subregion')
+@subregion_param('--subregion')
 @pass_context
 def OVS_Create(ctx, name, capacity, tier, shared, subregion):
     """Add a disk"""

@@ -55,7 +55,8 @@ def subregion_param(*args, **kwargs):
     kwargs.setdefault('help', 'subregion ID (as returned by OCI Subregions) or Auto')
     kwargs.setdefault('type', SubregionParam())
     kwargs.setdefault('default', 'Auto')
-    return positional_option(*args, **kwargs)
+    kwargs.setdefault('show_default', True)
+    return click.option(*args, **kwargs)
 
 
 def clone_type_param(*args, **kwargs):
@@ -209,7 +210,7 @@ def OCI_Subregions(ctx):
 @template_id_param('template')
 @oci_class_param('oci_class', required=False,
                  help='OCI class, e.g. v1.standard-1.09, defaults to minimal class of template')
-@subregion_param('subregion')
+@subregion_param('--subregion')
 @pass_context
 def OCI_Create(ctx, name, template, oci_class=None, subregion='Auto', forced_type='Machine', db_type=None):
     """Creates a new instance from template"""
