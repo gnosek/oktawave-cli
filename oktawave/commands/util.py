@@ -7,8 +7,8 @@ def show_template_category(ctx, category_id, name_filter=''):
         print "No templates in this category.\n"
 
 
-def show_oci_logs(ctx, id):
-    logs = ctx.api.OCI_Logs(id)
+def show_oci_logs(ctx, oci_id):
+    logs = ctx.api.OCI_Logs(oci_id)
 
     def fmt(op):
         return [
@@ -24,8 +24,8 @@ def show_oci_logs(ctx, id):
         logs, fmt)
 
 
-def show_oci_settings(ctx, id):
-    settings = ctx.api.OCI_Settings(id)
+def show_oci_settings(ctx, oci_id):
+    settings = ctx.api.OCI_Settings(oci_id)
     base_tab = [['Key', 'Value']]
     base_tab.extend([
         ['Autoscaling', settings['autoscaling']],
@@ -100,8 +100,8 @@ def show_oci_settings(ctx, id):
             settings['vlans'], fmt_vlan)
 
 
-def show_template_info(ctx, id):
-    ti = ctx.api.OCI_TemplateInfo(id)
+def show_template_info(ctx, template_id):
+    ti = ctx.api.OCI_TemplateInfo(template_id)
 
     def _hdd_label(hdd):
         if hdd['is_primary']:

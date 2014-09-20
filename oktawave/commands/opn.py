@@ -46,11 +46,11 @@ def OPN_List(ctx):
 
 
 @OPN.command()
-@opn_id_param('id')
+@opn_id_param('opn_id')
 @pass_context
-def OPN_Get(ctx, id):
+def OPN_Get(ctx, opn_id):
     """Display OPN info"""
-    c = ctx.api.OPN_Get(id)
+    c = ctx.api.OPN_Get(opn_id)
 
     base_tab = [['Key', 'Value']]
     base_tab.extend([
@@ -83,40 +83,40 @@ def OPN_Create(ctx, name, address_pool):
 
 
 @OPN.command()
-@opn_id_param('id')
+@opn_id_param('opn_id')
 @oci_id_param('oci_id')
 @positional_option('ip_address', help='OCI IP address')
 @pass_context
-def OPN_AddOCI(ctx, id, oci_id, ip_address):
+def OPN_AddOCI(ctx, opn_id, oci_id, ip_address):
     """Add an OCI to an OPN"""
-    ctx.api.OPN_AddOCI(id, oci_id, ip_address)
+    ctx.api.OPN_AddOCI(opn_id, oci_id, ip_address)
     print "OK"
 
 
 @OPN.command()
-@opn_id_param('id')
+@opn_id_param('opn_id')
 @oci_id_param('oci_id')
 @pass_context
-def OPN_RemoveOCI(ctx, id, oci_id):
+def OPN_RemoveOCI(ctx, opn_id, oci_id):
     """Remove an OCI from an OPN"""
-    ctx.api.OPN_RemoveOCI(id, oci_id)
+    ctx.api.OPN_RemoveOCI(opn_id, oci_id)
     print "OK"
 
 
 @OPN.command()
-@opn_id_param('id')
+@opn_id_param('opn_id')
 @pass_context
-def OPN_Delete(ctx, id):
+def OPN_Delete(ctx, opn_id):
     """Delete a private network"""
-    ctx.api.OPN_Delete(id)
+    ctx.api.OPN_Delete(opn_id)
     print "OK"
 
 
 @OPN.command()
-@opn_id_param('id')
+@opn_id_param('opn_id')
 @positional_option('name', help='OPN name')
 @pass_context
-def OPN_Rename(ctx, id, name):
+def OPN_Rename(ctx, opn_id, name):
     """Change OPN name"""
-    ctx.api.OPN_Rename(id, name)
+    ctx.api.OPN_Rename(opn_id, name)
     print "OK"

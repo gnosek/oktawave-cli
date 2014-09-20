@@ -54,36 +54,36 @@ def ORDB_List(ctx):
 
 
 @ORDB.command()
-@ordb_id_param('id')
+@ordb_id_param('ordb_id')
 @pass_context
-def ORDB_TurnOn(ctx, id):
+def ORDB_TurnOn(ctx, ordb_id):
     """Turn a database instance on"""
-    ctx.api.ORDB_TurnOn(id)
+    ctx.api.ORDB_TurnOn(ordb_id)
 
 
 @ORDB.command()
-@ordb_id_param('id')
+@ordb_id_param('ordb_id')
 @pass_context
-def ORDB_TurnOff(ctx, id):
+def ORDB_TurnOff(ctx, ordb_id):
     """Turn a database instance off"""
-    ctx.api.ORDB_TurnOff(id)
+    ctx.api.ORDB_TurnOff(ordb_id)
 
 
 @ORDB.command()
-@ordb_id_param('id')
+@ordb_id_param('ordb_id')
 @pass_context
-def ORDB_Restart(ctx, id):
+def ORDB_Restart(ctx, ordb_id):
     """Restart a database instance"""
-    ctx.api.ORDB_Restart(id)
+    ctx.api.ORDB_Restart(ordb_id)
 
 
 @ORDB.command(epilog="If db_name is not specified, delete whole instance")
-@ordb_id_param('id')
+@ordb_id_param('ordb_id')
 @db_name_param('db_name', required=False)
 @pass_context
-def ORDB_Delete(ctx, id, db_name):
+def ORDB_Delete(ctx, ordb_id, db_name):
     """Delete a logical database or database instance"""
-    ctx.api.ORDB_Delete(id, db_name)
+    ctx.api.ORDB_Delete(ordb_id, db_name)
 
 
 @ORDB.command()
@@ -105,30 +105,30 @@ def ORDB_Templates(ctx):
     and domain name will be assigned.
     """
 )
-@ordb_id_param('id')
+@ordb_id_param('ordb_id')
 @positional_option('name', help='new ORDB instance name')
 @clone_type_param('clone_type')
 @pass_context
-def ORDB_Clone(ctx, id, name, clone_type):
+def ORDB_Clone(ctx, ordb_id, name, clone_type):
     """Clone an ORDB instance"""
     clone_type = getattr(CloneType, clone_type)
-    ctx.api.OCI_Clone(id, name, clone_type)
+    ctx.api.OCI_Clone(ordb_id, name, clone_type)
 
 
 @ORDB.command()
-@ordb_id_param('id')
+@ordb_id_param('ordb_id')
 @pass_context
-def ORDB_Logs(ctx, id):
+def ORDB_Logs(ctx, ordb_id):
     """Show ORDB virtual machine logs"""
-    show_oci_logs(ctx, id)
+    show_oci_logs(ctx, ordb_id)
 
 
 @ORDB.command()
-@ordb_id_param('id')
+@ordb_id_param('ordb_id')
 @pass_context
-def ORDB_LogicalDatabases(ctx, id):
+def ORDB_LogicalDatabases(ctx, ordb_id):
     """Shows logical databases"""
-    dbs = ctx.api.ORDB_LogicalDatabases(id)
+    dbs = ctx.api.ORDB_LogicalDatabases(ordb_id)
 
     def fmt(db):
         return [
@@ -147,11 +147,11 @@ def ORDB_LogicalDatabases(ctx, id):
 
 
 @ORDB.command()
-@ordb_id_param('id')
+@ordb_id_param('ordb_id')
 @pass_context
-def ORDB_Settings(ctx, id):
+def ORDB_Settings(ctx, ordb_id):
     """Show ORDB settings"""
-    show_oci_settings(ctx, id)
+    show_oci_settings(ctx, ordb_id)
 
 
 @ORDB.command(name='Create', short_help='Create a new ORDB')
@@ -170,10 +170,10 @@ def ORDB_Create(ctx, name, template, oci_class, subregion):
 
 
 @ORDB.command()
-@ordb_id_param('id')
-def ORDB_GlobalSettings(ctx, id):
+@ordb_id_param('ordb_id')
+def ORDB_GlobalSettings(ctx, ordb_id):
     """Show global database engine settings"""
-    settings = ctx.api.ORDB_GlobalSettings(id)
+    settings = ctx.api.ORDB_GlobalSettings(ordb_id)
 
     def fmt(item):
         return [item['name'], item['value']]
@@ -182,32 +182,32 @@ def ORDB_GlobalSettings(ctx, id):
 
 
 @ORDB.command()
-@template_id_param('id')
+@template_id_param('template_id')
 @pass_context
-def ORDB_TemplateInfo(ctx, id):
+def ORDB_TemplateInfo(ctx, template_id):
     """Show more detailed info about a particular template"""
-    show_template_info(ctx, id)
+    show_template_info(ctx, template_id)
 
 
 @ORDB.command()
-@ordb_id_param('id')
+@ordb_id_param('ordb_id')
 @db_name_param('name')
 @positional_option('encoding', help='database character encoding',
                    type=click.Choice(['utf8', 'latin2']), default='utf8')
 @pass_context
-def ORDB_CreateLogicalDatabase(ctx, id, name, encoding):
+def ORDB_CreateLogicalDatabase(ctx, ordb_id, name, encoding):
     """Create a new logical database within an instance"""
-    ctx.api.ORDB_CreateLogicalDatabase(id, name, encoding)
+    ctx.api.ORDB_CreateLogicalDatabase(ordb_id, name, encoding)
     print "OK"
 
 
 @ORDB.command()
-@ordb_id_param('id')
+@ordb_id_param('ordb_id')
 @db_name_param('name')
 @pass_context
-def ORDB_BackupLogicalDatabase(ctx, id, name):
+def ORDB_BackupLogicalDatabase(ctx, ordb_id, name):
     """Create a backup of logical database"""
-    ctx.api.ORDB_BackupLogicalDatabase(id, name)
+    ctx.api.ORDB_BackupLogicalDatabase(ordb_id, name)
     print "OK"
 
 
@@ -237,12 +237,12 @@ def ORDB_Backups(ctx):
 
 
 @ORDB.command()
-@ordb_id_param('id')
+@ordb_id_param('ordb_id')
 @positional_option('backup_file', help='backup file name (as returned by ORDB Backups)')
 @db_name_param('name')
 @pass_context
-def ORDB_RestoreLogicalDatabase(ctx, id, name, backup_file):
+def ORDB_RestoreLogicalDatabase(ctx, ordb_id, name, backup_file):
     """Restore a backup of logical database"""
-    ctx.api.ORDB_RestoreLogicalDatabase(id, name, backup_file)
+    ctx.api.ORDB_RestoreLogicalDatabase(ordb_id, name, backup_file)
     print "OK"
 

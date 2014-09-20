@@ -70,11 +70,11 @@ def Container_List(ctx):
 
 
 @Container.command()
-@container_id_param('id')
+@container_id_param('container_id')
 @pass_context
-def Container_Get(ctx, id):
+def Container_Get(ctx, container_id):
     """Display container information"""
-    c = ctx.api.Container_Get(id)
+    c = ctx.api.Container_Get(container_id)
 
     base_tab = [['Key', 'Value']]
     base_tab.extend([
@@ -109,7 +109,7 @@ def Container_Get(ctx, id):
     ctx.p.print_str('\nBasic container settings')
     ctx.p.print_table(base_tab)
 
-    oci_list = ctx.api.Container_OCIList(id)
+    oci_list = ctx.api.Container_OCIList(container_id)
 
     def fmt_oci(oci):
         return [oci['oci_id'], oci['oci_name'], oci['status']]
@@ -120,31 +120,31 @@ def Container_Get(ctx, id):
 
 
 @Container.command()
-@container_id_param('id')
+@container_id_param('container_id')
 @oci_id_param('oci_id')
 @pass_context
-def Container_RemoveOCI(ctx, id, oci_id):
+def Container_RemoveOCI(ctx, container_id, oci_id):
     """Remove an OCI from a container"""
-    ctx.api.Container_RemoveOCI(id, oci_id)
+    ctx.api.Container_RemoveOCI(container_id, oci_id)
     print "OK"
 
 
 @Container.command()
-@container_id_param('id')
+@container_id_param('container_id')
 @oci_id_param('oci_id')
 @pass_context
-def Container_AddOCI(ctx, id, oci_id):
+def Container_AddOCI(ctx, container_id, oci_id):
     """Add an OCI to a container"""
-    ctx.api.Container_AddOCI(id, oci_id)
+    ctx.api.Container_AddOCI(container_id, oci_id)
     print "OK"
 
 
 @Container.command()
-@container_id_param('id')
+@container_id_param('container_id')
 @pass_context
-def Container_Delete(ctx, id):
+def Container_Delete(ctx, container_id):
     """Delete a container"""
-    ctx.api.Container_Delete(id)
+    ctx.api.Container_Delete(container_id)
     print "OK"
 
 
@@ -165,16 +165,16 @@ def Container_Create(ctx, name, load_balancer, service, port, proxy_cache, use_s
 
 
 @Container.command()
-@container_id_param('id')
+@container_id_param('container_id')
 @positional_option('name', help='container name')
 @container_options
 @pass_context
-def Container_Edit(ctx, id, name, load_balancer, service, port, proxy_cache, use_ssl,
+def Container_Edit(ctx, container_id, name, load_balancer, service, port, proxy_cache, use_ssl,
                    healthcheck, mysql_master_id, session_persistence,
                    load_balancer_algorithm, ip_version, autoscaling):
     """Modify a container"""
     ctx.api.Container_Edit(
-        id, name, load_balancer, service, port, proxy_cache,
+        container_id, name, load_balancer, service, port, proxy_cache,
         use_ssl, healthcheck, mysql_master_id, session_persistence,
         load_balancer_algorithm, ip_version, autoscaling
     )

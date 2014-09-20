@@ -103,12 +103,12 @@ def OVS_Create(ctx, name, capacity, tier, disktype, subregion):
 
 
 @OVS.command()
-@ovs_id_param('id')
+@ovs_id_param('ovs_id')
 @pass_context
-def OVS_Delete(ctx, id):
+def OVS_Delete(ctx, ovs_id):
     """Delete a disk"""
     try:
-        ctx.api.OVS_Delete(id)
+        ctx.api.OVS_Delete(ovs_id)
     except OktawaveOVSDeleteError:
         print "ERROR: Disk cannot be deleted (is it mapped to any OCI instances?)."
     else:

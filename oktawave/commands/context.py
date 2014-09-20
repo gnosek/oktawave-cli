@@ -69,6 +69,7 @@ class NamedItemParam(click.ParamType):
         return found_item_id
 
 
+# noinspection PyShadowingBuiltins
 class PositionalOption(click.Argument):
 
     def __init__(self, param_decls, required=None, help=None, **attrs):

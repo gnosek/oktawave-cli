@@ -88,19 +88,19 @@ def OCI_TemplateCategories(ctx):
 
 
 @OCI.command()
-@positional_option('id', type=click.INT, help='template category (as returned by OCI TemplateCategories)')
+@positional_option('category_id', type=click.INT, help='template category (as returned by OCI TemplateCategories)')
 @pass_context
-def OCI_Templates(ctx, id):
+def OCI_Templates(ctx, category_id):
     """List templates in a category"""
-    show_template_category(ctx, id)
+    show_template_category(ctx, category_id)
 
 
 @OCI.command()
-@template_id_param('id')
+@template_id_param('template_id')
 @pass_context
-def OCI_TemplateInfo(ctx, id):
+def OCI_TemplateInfo(ctx, template_id):
     """Show more detailed info about a particular template"""
-    show_template_info(ctx, id)
+    show_template_info(ctx, template_id)
 
 
 @OCI.command()
@@ -132,51 +132,51 @@ def OCI_ListDetails(ctx):
 
 
 @OCI.command()
-@oci_id_param('id')
+@oci_id_param('oci_id')
 @pass_context
-def OCI_Restart(ctx, id):
+def OCI_Restart(ctx, oci_id):
     """Restart a VM"""
-    ctx.api.OCI_Restart(id)
+    ctx.api.OCI_Restart(oci_id)
 
 
 @OCI.command()
-@oci_id_param('id')
+@oci_id_param('oci_id')
 @pass_context
-def OCI_TurnOff(ctx, id):
+def OCI_TurnOff(ctx, oci_id):
     """Turn off a VM"""
-    ctx.api.OCI_TurnOff(id)
+    ctx.api.OCI_TurnOff(oci_id)
 
 
 @OCI.command()
-@oci_id_param('id')
+@oci_id_param('oci_id')
 @pass_context
-def OCI_TurnOn(ctx, id):
+def OCI_TurnOn(ctx, oci_id):
     """Turn on a VM"""
-    ctx.api.OCI_TurnOn(id)
+    ctx.api.OCI_TurnOn(oci_id)
 
 
 @OCI.command()
-@oci_id_param('id')
+@oci_id_param('oci_id')
 @pass_context
-def OCI_Delete(ctx, id):
+def OCI_Delete(ctx, oci_id):
     """Delete a VM"""
-    ctx.api.OCI_Delete(id)
+    ctx.api.OCI_Delete(oci_id)
 
 
 @OCI.command()
-@oci_id_param('id')
+@oci_id_param('oci_id')
 @pass_context
-def OCI_Logs(ctx, id):
+def OCI_Logs(ctx, oci_id):
     """Show virtual machine logs"""
-    show_oci_logs(ctx, id)
+    show_oci_logs(ctx, oci_id)
 
 
 @OCI.command()
-@oci_id_param('id')
+@oci_id_param('oci_id')
 @pass_context
-def OCI_Settings(ctx, id):
+def OCI_Settings(ctx, oci_id):
     """Show basic VM settings (IP addresses, OS, names, autoscaling etc.)"""
-    show_oci_settings(ctx, id)
+    show_oci_settings(ctx, oci_id)
 
 
 @OCI.command()
@@ -196,12 +196,12 @@ def OCI_Create(ctx, name, template, oci_class=None, subregion='Auto', forced_typ
 
 
 @OCI.command()
-@oci_id_param('id')
+@oci_id_param('oci_id')
 @oci_class_param('oci_class')
 @pass_context
-def OCI_ChangeClass(ctx, id, oci_class):
+def OCI_ChangeClass(ctx, oci_id, oci_class):
     """Change running instance class"""
-    ctx.api.OCI_ChangeClass(id, oci_class)
+    ctx.api.OCI_ChangeClass(oci_id, oci_class)
 
 
 @OCI.command(
@@ -213,48 +213,48 @@ def OCI_ChangeClass(ctx, id, oci_class):
     and domain name will be assigned.
     """
 )
-@oci_id_param('id')
+@oci_id_param('oci_id')
 @positional_option('name', help='new OCI name')
 @positional_option('clone_type', type=click.Choice(['Runtime', 'AbsoluteCopy']))
 @pass_context
-def OCI_Clone(ctx, id, name, clone_type):
+def OCI_Clone(ctx, oci_id, name, clone_type):
     """Clone a VM"""
     clone_type = getattr(CloneType, clone_type)
-    ctx.api.OCI_Clone(id, name, clone_type)
+    ctx.api.OCI_Clone(oci_id, name, clone_type)
 
 
 @OCI.command()
-@oci_id_param('id')
+@oci_id_param('oci_id')
 @click.argument('ping_args', nargs=-1, required=False)
 @pass_context
-def OCI_ping(ctx, id, ping_args):
+def OCI_ping(ctx, oci_id, ping_args):
     """Ping VM"""
-    ip = oci_ip(ctx, id)
+    ip = oci_ip(ctx, oci_id)
     os.execvp('ping', ('ping', ip) + ping_args)
 
 
 @OCI.command()
-@oci_id_param('id')
+@oci_id_param('oci_id')
 @remote_user_option('--user')
 @click.argument('ssh_args', nargs=-1, required=False)
 @pass_context
-def OCI_ssh(ctx, id, user, ssh_args):
+def OCI_ssh(ctx, oci_id, user, ssh_args):
     """Connect to VM using ssh"""
-    ip = oci_ip(ctx, id)
-    print 'Default OCI password: %s' % ctx.api.OCI_DefaultPassword(id)
+    ip = oci_ip(ctx, oci_id)
+    print 'Default OCI password: %s' % ctx.api.OCI_DefaultPassword(oci_id)
     remote = '%s@%s' % (user, ip)
     os.execvp('ssh', ('ssh', remote) + ssh_args)
 
 
 @OCI.command(name='ssh_copy_id', short_help='Copy ssh public key to VM')
-@oci_id_param('id')
+@oci_id_param('oci_id')
 @remote_user_option('--user')
 @click.argument('ssh_args', nargs=-1, required=False)
 @pass_context
-def OCI_ssh_copy_id(ctx, id, user, ssh_args):
+def OCI_ssh_copy_id(ctx, oci_id, user, ssh_args):
     """Copy ssh public key to VM"""
-    ip = oci_ip(ctx, id)
-    print 'Default OCI password: %s' % ctx.api.OCI_DefaultPassword(id)
+    ip = oci_ip(ctx, oci_id)
+    print 'Default OCI password: %s' % ctx.api.OCI_DefaultPassword(oci_id)
     remote = '%s@%s' % (user, ip)
     os.execvp('ssh-copy-id', ('ssh-copy-id', remote) + ssh_args)
 
