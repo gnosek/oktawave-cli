@@ -21,6 +21,7 @@ def ordb_id_param(*args, **kwargs):
     kwargs.setdefault('type', ORDBParam())
     return positional_option(*args, **kwargs)
 
+
 def db_name_param(*args, **kwargs):
     kwargs.setdefault('help', 'logical database name')
     return positional_option(*args, **kwargs)

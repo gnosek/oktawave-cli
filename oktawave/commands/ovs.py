@@ -114,6 +114,7 @@ def OVS_Delete(ctx, id):
     else:
         print "OK"
 
+
 @OVS.command()
 @ovs_id_param('ovs_id')
 @oci_id_param('oci_id')

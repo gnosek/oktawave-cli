@@ -58,6 +58,7 @@ def remote_user_option(*args, **kwargs):
     kwargs.setdefault('show_default', True)
     return click.option(*args, **kwargs)
 
+
 def oci_ip(ctx, oci_id):
     settings = ctx.api.OCI_Settings(oci_id)
     return settings['ips'][0]['ipv4']
