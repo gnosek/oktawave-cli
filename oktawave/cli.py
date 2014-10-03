@@ -1,4 +1,4 @@
-from ConfigParser import RawConfigParser
+from ConfigParser import RawConfigParser, NoSectionError
 import os
 
 import click
@@ -17,7 +17,7 @@ VERSION = '0.9.0'
 
 @click.group()
 @click.option('-c', '--config', help='Specify configuration file', type=click.Path(dir_okay=False),
-              default='~/.oktawave-cli/config')
+              default=os.path.expanduser('~/.oktawave-cli/config'))
 @click.option('-d', '--debug/--no-debug', help='Debug output')
 @click.option('-u', '--username', help='Oktawave username', required=False)
 @click.option('-p', '--password', help='Oktawave password', required=False)
@@ -40,8 +40,11 @@ def cli(ctx, config=None, username=None, password=None, ocs_username=None, ocs_p
     api_username = get_config_value('Auth', 'username', username)
     api_password = get_config_value('Auth', 'password', password)
     if os.path.exists(config):
-        ocs_username = get_config_value('OCS', 'username', ocs_username)
-        ocs_password = get_config_value('OCS', 'password', ocs_password)
+        try:
+            ocs_username = get_config_value('OCS', 'username', ocs_username)
+            ocs_password = get_config_value('OCS', 'password', ocs_password)
+        except NoSectionError:
+            pass
     ctx.init_output()
     ctx.init_api(api_username, api_password, debug)
     ctx.init_ocs(ocs_username, ocs_password)
