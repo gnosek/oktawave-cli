@@ -590,7 +590,7 @@ class OktawaveApi(object):
             }
 
     def OCI_Create(self, name, template, oci_class=None, forced_type=TemplateType.Machine, db_type=None,
-                   subregion='Auto'):
+                   subregion='Auto', disk_size_gb=None, ip_address_id=None):
         """Creates a new instance from template"""
         self.logon()
         oci_class_id = None
@@ -599,22 +599,39 @@ class OktawaveApi(object):
             if not oci_class_obj:
                 raise OktawaveOCIClassNotFound()
             oci_class_id = oci_class_obj.id
-        self.clients.call('CreateVirtualMachine',
-                          templateId=template,
-                          disks=None,
-                          additionalDisks=None,
-                          machineName=name,
-                          selectedClass=oci_class_id,
-                          selectedContainer=None,
-                          selectedPaymentMethod=DICT['OCI_PAYMENT_ID'],
-                          selectedConnectionType=DICT['OCI_CONNECTION_ID'],
-                          clientId=self.client_id,
-                          providervAppClientId=None,
-                          vAppType=forced_type,
-                          databaseTypeId=db_type,
-                          clientVmParameter=None,
-                          autoScalingTypeId=DICT['OCI_AUTOSCALING_ID'],
-                          clusterId=_subregion_id(subregion))
+
+        args = dict(
+            templateId=template,
+            additionalDisks=None,
+            machineName=name,
+            selectedClass=oci_class_id,
+            selectedContainer=None,
+            selectedPaymentMethod=DICT['OCI_PAYMENT_ID'],
+            selectedConnectionType=DICT['OCI_CONNECTION_ID'],
+            clientId=self.client_id,
+            providervAppClientId=None,
+            vAppType=forced_type,
+            databaseTypeId=db_type,
+            clientVmParameter=None,
+            autoScalingTypeId=DICT['OCI_AUTOSCALING_ID'],
+        )
+
+        if disk_size_gb is None and ip_address_id is None:
+            self.clients.call('CreateVirtualMachine',
+                              disks=None,
+                              clusterId=_subregion_id(subregion),
+                              **args)
+        else:
+            if disk_size_gb is None:
+                disk_size_gb = 1  # minimum possible size, template will probably override
+            if ip_address_id is None:
+                ip_address_id = 0
+            self.clients.call('CreateVirtualMachineWithSpecificDiskSizeAndIp',
+                              diskSizeGB=disk_size_gb,
+                              ipId=ip_address_id,
+                              subRegionId=_subregion_id(subregion),
+                              instancesCount=1,
+                              **args)
 
     def OCI_Clone(self, oci_id, name, clonetype):
         """Clones a VM"""

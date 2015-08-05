@@ -211,12 +211,14 @@ def OCI_Subregions(ctx):
 @oci_class_param('oci_class', required=False,
                  help='OCI class, e.g. v1.standard-1.09, defaults to minimal class of template')
 @subregion_param('--subregion')
+@click.option('--disk-size', required=False, type=click.INT, metavar='SIZE',
+              help='Disk size in GB (optional, defaults to template minimum)')
 @pass_context
-def OCI_Create(ctx, name, template, oci_class=None, subregion='Auto', forced_type='Machine', db_type=None):
+def OCI_Create(ctx, name, template, oci_class=None, subregion='Auto', forced_type='Machine', db_type=None, disk_size=None):
     """Creates a new instance from template"""
     forced_type = getattr(TemplateType, forced_type)
     try:
-        ctx.api.OCI_Create(name, template, oci_class, forced_type, db_type, subregion)
+        ctx.api.OCI_Create(name, template, oci_class, forced_type, db_type, subregion, disk_size, ip_address_id=None)
     except OktawaveOCIClassNotFound:
         print "OCI class not found"
 
